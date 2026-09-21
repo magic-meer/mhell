@@ -20,14 +20,14 @@ Modular per-area QML. `shell.qml` composes `bar/Bar.qml` (layer-shell `PanelWind
 | 6 | Quick settings popup | `quick/QuickSettingsWidget.qml`, `quick/QuickSettings.qml`, `smoke-quicksettings.qml` | ✅ committed |
 | 7 | Notification center | `notifications/NotificationWidget.qml`, `notifications/NotificationCenter.qml`, `notifications/notifsmoke.qml`, `notifications/qmldir` | ✅ committed |
 | 8 | Media player | `media/MediaPlayerWidget.qml`, `media/MediaPlayer.qml`, `media/MediaPlayerCore.js`, `media/mplayersmoke.qml`, `media/qmldir` | ✅ committed |
+| 9 | Dock | `dock/DockWidget.qml`, `dock/Dock.qml`, `dock/DockCore.js`, `dock/docksmoke.qml`, `dock/qmldir`, `theme/Theme.qml` (dockHeight) | ✅ committed |
 
-**v1 provides:** Theme tokens, shared primitives, bar (tray + clock pill + settings pill), clock/calendar popup, quick settings popup (wifi/bluetooth/volume/brightness/battery/power), notification center, media player. `shell.qml` boots via `QuickshellRoot`. niri `layer-rule` blur on `^myquickshell:` namespace.
+**v1 provides:** Theme tokens, shared primitives, bar (tray + clock pill + settings pill), clock/calendar popup, quick settings popup (wifi/bluetooth/volume/brightness/battery/power), notification center, media player, dock. `shell.qml` boots via `QuickshellRoot`. niri `layer-rule` blur on `^myquickshell:` namespace.
 
 ## Remaining Components (build order)
 
 ### Phase 1 — Core missing desktop elements
 1. **App Launcher** — PopupWindow with searchable app list, scans `/usr/share/applications/*.desktop`, launches via `Process`. [NEXT]
-2. **Dock** — Bottom/horizontal taskbar + system tray + running app indicators.
 
 ### Phase 2 — Utilities
 5. **Lock Screen** — Fullscreen lock with auth.
