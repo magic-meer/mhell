@@ -53,6 +53,7 @@ Item {
                             case "volume":      return volumeComp
                             case "brightness":  return brightnessComp
                             case "network":     return networkComp
+                            case "systemtray":  return systemTrayComp
                             default:            return null
                         }
                     }
@@ -62,9 +63,10 @@ Item {
     }
 
     // ── Component definitions ─────────────────────────────────────────────
-    Component { id: workspacesComp; Workspaces {} }
-    Component { id: clockComp;      Clock      {} }
-    Component { id: volumeComp;     Volume     {} }
-    Component { id: brightnessComp; Brightness {} }
-    Component { id: networkComp;    Network    {} }
+    Component { id: workspacesComp; Workspaces  {} }
+    Component { id: clockComp;      Clock       {} }
+    Component { id: volumeComp;     Volume      {} }
+    Component { id: brightnessComp; Brightness  {} }
+    Component { id: networkComp;    Network     {} }
+    Component { id: systemTrayComp; SystemTray  {} }
 }

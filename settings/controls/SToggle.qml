@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * SToggle — iOS-style animated toggle switch.
@@ -54,6 +55,9 @@ Item {
         id: mouse
         anchors.fill: parent
         cursorShape:  Qt.PointingHandCursor
-        onClicked: root.toggled(!root.checked)
+        onClicked: {
+            root.toggled(!root.checked)
+            Settings.scheduleSave()
+        }
     }
 }

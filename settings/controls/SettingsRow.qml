@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * SettingsRow — a single row inside a SettingsGroup.
@@ -44,7 +45,7 @@ Item {
         id: controlSlot
         anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
         width:  childrenRect.width
-        height: parent.height
+        height: childrenRect.height
     }
 
     // Divider

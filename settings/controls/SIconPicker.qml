@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * SIconPicker — shows the current icon (glyph or image) plus a text field

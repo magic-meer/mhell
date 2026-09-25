@@ -15,7 +15,8 @@ Item {
 
     // ── Pipewire state ────────────────────────────────────────────────────
     readonly property var  sink:  Pipewire.defaultAudioSink
-    readonly property var  audio: sink  ? sink.audio : null
+    readonly property bool ready: sink ? sink.ready : false
+    readonly property var  audio: ready ? sink.audio : null
     readonly property real vol:   audio ? Math.round(audio.volume * 100) : 0
     readonly property bool muted: audio ? audio.muted : false
 
@@ -80,9 +81,9 @@ Item {
         anchors.fill: parent
         hoverEnabled: cfg.hoverEnabled
         acceptedButtons: Qt.LeftButton
-        onClicked: if (root.audio) root.audio.muted = !root.audio.muted
+        onClicked: if (root.ready && root.audio) root.audio.muted = !root.audio.muted
         onWheel: wheel => {
-            if (!root.audio) return
+            if (!root.ready || !root.audio) return
             const delta = wheel.angleDelta.y > 0 ? cfg.scrollStep : -cfg.scrollStep
             root.audio.volume = Math.max(0.0, Math.min(cfg.maxVolume, root.audio.volume + delta))
         }

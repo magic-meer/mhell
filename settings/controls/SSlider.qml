@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * SSlider — smooth slider with accent fill and animated thumb.
@@ -62,13 +63,16 @@ Item {
         hoverEnabled: true
         preventStealing: true
 
+        property bool ready: false
+        Component.onCompleted: ready = true
+
         function posToValue(mx) {
             const clamped = Math.max(0, Math.min(trackBg.width, mx))
             const frac    = clamped / trackBg.width
             return root.from + frac * (root.to - root.from)
         }
 
-        onPressed:  mouse => root.edited(posToValue(mouse.x))
-        onMouseXChanged: if (pressed) root.edited(posToValue(mouseX))
+        onPressed:  mouse => { if (ready) { root.edited(posToValue(mouse.x)); Settings.scheduleSave() } }
+        onMouseXChanged: if (ready && pressed) { root.edited(posToValue(mouseX)); Settings.scheduleSave() }
     }
 }

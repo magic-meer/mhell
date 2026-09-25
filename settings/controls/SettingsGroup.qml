@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * SettingsGroup — a card-style container that groups related controls.

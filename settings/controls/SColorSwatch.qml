@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * SColorSwatch — a colored swatch button.
@@ -124,6 +125,7 @@ Item {
                             else if (index === 1) root.picked(Qt.rgba(c.r, val,   c.b,  c.a))
                             else if (index === 2) root.picked(Qt.rgba(c.r, c.g,   val,  c.a))
                             else root.picked(Qt.rgba(c.r, c.g, c.b, val))
+                            Settings.scheduleSave()
                         }
                     }
 

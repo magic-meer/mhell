@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Shell Settings
 Comment=Configure my_quickshell
-Exec=quickshell ipc call -p /home/meher/projects/my_quickshell toggleSettings
+Exec=/etc/profiles/per-user/meher/bin/quickshell -c shell ipc call toggleSettings toggleSettings
 Icon=preferences-system
 Terminal=false
 Type=Application

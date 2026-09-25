@@ -31,19 +31,62 @@ FloatingWindow {
     // Transparent so Niri blurs when cfg.useBlur is true
     color: cfg.useBlur ? "transparent" : cfg.windowBg
 
+    // ── External close (e.g. Mod+Q kills the window via compositor) ───────
+    // When visible flips to false without going through toggle(), stop any
+    // running animations and reset state so the next open works cleanly.
+    onVisibleChanged: {
+        if (!visible) {
+            openAnim.stop()
+            closeAnim.stop()
+            if (content) {
+                content.opacity = 1
+                content.scale   = 1
+            }
+            _toggling = false
+            debounceTimer.stop()
+        }
+    }
+
+    // Intercept compositor close request (Mod+Q) — hide instead of destroy
+    onClosed: {
+        openAnim.stop()
+        closeAnim.stop()
+        if (content) {
+            content.opacity = 1
+            content.scale   = 1
+        }
+        _toggling    = false
+        win.visible  = false
+        debounceTimer.stop()
+    }
+
     // ── IPC handler — called by keybind / desktop entry ───────────────────
     IpcHandler {
         target: "toggleSettings"
         function toggleSettings() { win.toggle() }
     }
 
+    // Debounce guard — ignores repeated calls within 600ms (key repeat / double trigger)
+    property bool _toggling: false
+
     function toggle() {
+        if (_toggling) return
+        _toggling = true
+        debounceTimer.restart()
+
         if (win.visible) {
             closeAnim.start()
         } else {
             win.visible = true
             openAnim.start()
         }
+    }
+
+    Timer {
+        id: debounceTimer
+        interval: 600
+        repeat:   false
+        onTriggered: win._toggling = false
     }
 
     // ── Open animation ────────────────────────────────────────────────────
@@ -105,23 +148,7 @@ FloatingWindow {
 
             property int currentIndex: 0
 
-            // All pages are loaded; only one is shown at a time.
-            // Page transitions: the outgoing page slides left, incoming slides in from right.
-            function switchTo(index) {
-                if (index === currentIndex) return
-                const dir = index > currentIndex ? 1 : -1
-                outAnim.direction = dir
-                outAnim.target    = pages[currentIndex]
-                inAnim.direction  = dir
-                inAnim.target     = pages[index]
-                currentIndex      = index
-                sidebar.currentPage = index
-                transitionGroup.start()
-            }
-
-            property var pages: [p0, p1, p2, p3, p4, p5]
-
-            // Pages
+            // Pages — declared first so they exist when switchTo is called
             PageBar        { id: p0; anchors.fill: parent; visible: pageStack.currentIndex === 0 }
             PageWorkspaces { id: p1; anchors.fill: parent; visible: pageStack.currentIndex === 1 }
             PageClock      { id: p2; anchors.fill: parent; visible: pageStack.currentIndex === 2 }
@@ -129,9 +156,27 @@ FloatingWindow {
             PageBrightness { id: p4; anchors.fill: parent; visible: pageStack.currentIndex === 4 }
             PageNetwork    { id: p5; anchors.fill: parent; visible: pageStack.currentIndex === 5 }
 
-            // Page transition animation
-            property var outAnim: _outAnim
-            property var inAnim:  _inAnim
+            function pageAt(i) {
+                if (i === 0) return p0
+                if (i === 1) return p1
+                if (i === 2) return p2
+                if (i === 3) return p3
+                if (i === 4) return p4
+                if (i === 5) return p5
+                return null
+            }
+
+            function switchTo(index) {
+                if (index === currentIndex) return
+                const dir = index > currentIndex ? 1 : -1
+                outAnim.direction = dir
+                outAnim.target    = pageAt(currentIndex)
+                inAnim.direction  = dir
+                inAnim.target     = pageAt(index)
+                currentIndex      = index
+                sidebar.currentPage = index
+                transitionGroup.start()
+            }
 
             ParallelAnimation {
                 id: transitionGroup

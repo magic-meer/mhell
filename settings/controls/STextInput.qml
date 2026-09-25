@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * STextInput — single-line text field.
@@ -37,8 +38,11 @@ Item {
             selectedTextColor: cfg.textPrimary
             clip:            true
 
-            onEditingFinished: root.committed(text)
-            onTextChanged:     if (Settings.settingsUI.instantApply) root.committed(text)
+            property bool ready: false
+            Component.onCompleted: ready = true
+
+            onEditingFinished: { root.committed(text); Settings.scheduleSave() }
+            onTextChanged:     if (ready && Settings.settingsUI.instantApply) { root.committed(text); Settings.scheduleSave() }
         }
 
         // Placeholder

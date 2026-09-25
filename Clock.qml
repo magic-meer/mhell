@@ -14,7 +14,7 @@ Item {
     implicitHeight: col.implicitHeight
 
     Timer {
-        interval: cfg.showSeconds ? 1000 : 1000
+        interval: cfg.showSeconds ? 1000 : 60000
         running:  true
         repeat:   true
         onTriggered: root.now = new Date()

@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Io
 
 /**
  * Workspaces — reads all configuration from Settings.workspaces.
@@ -20,6 +21,18 @@ Item {
             if (NiriIpc.workspaces[i].is_focused) return i
         }
         return 0
+    }
+
+    // ── Focus command ─────────────────────────────────────────────────────
+    Process {
+        id: focusProc
+        property int targetIdx: 1
+        command: ["niri", "msg", "action", "focus-workspace", String(focusProc.targetIdx)]
+    }
+
+    function focusWorkspace(idx) {
+        focusProc.targetIdx = idx
+        focusProc.running   = true
     }
 
     // ── Sliding highlight ─────────────────────────────────────────────────
@@ -107,6 +120,8 @@ Item {
                 id: hoverArea
                 anchors.fill: parent
                 hoverEnabled: cfg.hoverEnabled
+                cursorShape:  Qt.PointingHandCursor
+                onClicked:    root.focusWorkspace(modelData.idx)
             }
         }
     }

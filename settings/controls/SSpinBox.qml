@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * SSpinBox — integer value editor with − / + buttons.
@@ -51,8 +52,10 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape:  Qt.PointingHandCursor
-                    onClicked: if (root.value - root.step >= root.from)
+                    onClicked: if (root.value - root.step >= root.from) {
                                    root.edited(root.value - root.step)
+                                   Settings.scheduleSave()
+                               }
                 }
             }
 
@@ -92,8 +95,10 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape:  Qt.PointingHandCursor
-                    onClicked: if (root.value + root.step <= root.to)
+                    onClicked: if (root.value + root.step <= root.to) {
                                    root.edited(root.value + root.step)
+                                   Settings.scheduleSave()
+                               }
                 }
             }
         }

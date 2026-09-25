@@ -1,4 +1,5 @@
 import QtQuick
+import "../.."
 
 /**
  * SDropDown — compact dropdown selector.
@@ -133,6 +134,7 @@ Item {
                             onClicked: {
                                 root.selected(index)
                                 popup.visible = false
+                                Settings.scheduleSave()
                             }
                         }
                     }
