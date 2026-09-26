@@ -148,13 +148,13 @@ FloatingWindow {
 
             property int currentIndex: 0
 
-            // Pages — declared first so they exist when switchTo is called
-            PageBar        { id: p0; anchors.fill: parent; visible: pageStack.currentIndex === 0 }
-            PageWorkspaces { id: p1; anchors.fill: parent; visible: pageStack.currentIndex === 1 }
-            PageClock      { id: p2; anchors.fill: parent; visible: pageStack.currentIndex === 2 }
-            PageVolume     { id: p3; anchors.fill: parent; visible: pageStack.currentIndex === 3 }
-            PageBrightness { id: p4; anchors.fill: parent; visible: pageStack.currentIndex === 4 }
-            PageNetwork    { id: p5; anchors.fill: parent; visible: pageStack.currentIndex === 5 }
+            // Pages — all loaded, visibility managed manually by switchTo
+            PageBar        { id: p0; anchors.fill: parent }
+            PageWorkspaces { id: p1; anchors.fill: parent; visible: false }
+            PageClock      { id: p2; anchors.fill: parent; visible: false }
+            PageVolume     { id: p3; anchors.fill: parent; visible: false }
+            PageBrightness { id: p4; anchors.fill: parent; visible: false }
+            PageNetwork    { id: p5; anchors.fill: parent; visible: false }
 
             function pageAt(i) {
                 if (i === 0) return p0
@@ -168,12 +168,21 @@ FloatingWindow {
 
             function switchTo(index) {
                 if (index === currentIndex) return
-                const dir = index > currentIndex ? 1 : -1
+                const outPage = pageAt(currentIndex)
+                const inPage  = pageAt(index)
+                const dir     = index > currentIndex ? 1 : -1
+
+                // Reset incoming page position before animating it in
+                inPage.x       = dir > 0 ? pageStack.width * 0.25 : -pageStack.width * 0.25
+                inPage.opacity = 0
+                inPage.visible = true
+
                 outAnim.direction = dir
-                outAnim.target    = pageAt(currentIndex)
+                outAnim.target    = outPage
                 inAnim.direction  = dir
-                inAnim.target     = pageAt(index)
-                currentIndex      = index
+                inAnim.target     = inPage
+
+                currentIndex        = index
                 sidebar.currentPage = index
                 transitionGroup.start()
             }
@@ -203,6 +212,8 @@ FloatingWindow {
                             easing.type: Easing.OutCubic
                         }
                     }
+                    // Hide and reset the outgoing page after it animates out
+                    PropertyAction { target: _outAnim.target; property: "visible"; value: false }
                     PropertyAction { target: _outAnim.target; property: "x";       value: 0 }
                     PropertyAction { target: _outAnim.target; property: "opacity"; value: 1 }
                 }
@@ -211,14 +222,7 @@ FloatingWindow {
                     id: _inAnim
                     property var target:    p0
                     property int direction: 1
-                    PropertyAction {
-                        target:   _inAnim.target
-                        property: "x"
-                        value:    _inAnim.direction > 0
-                                    ? pageStack.width * 0.25
-                                    : -pageStack.width * 0.25
-                    }
-                    PropertyAction { target: _inAnim.target; property: "opacity"; value: 0 }
+                    // switchTo already positioned and made the incoming page visible
                     ParallelAnimation {
                         NumberAnimation {
                             target:   _inAnim.target

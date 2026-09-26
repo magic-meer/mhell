@@ -1,11 +1,11 @@
 import QtQuick
 import ".."
-import QtQuick.Controls
 
 /**
  * SettingsPage — base wrapper for every settings page.
  * Provides a page title, optional subtitle, and a scrollable content area.
  * Usage: put controls inside the default `content` slot.
+ * Uses only QtQuick (no QtQuick.Controls) to avoid platform theme interference.
  */
 Item {
     id: root
@@ -57,20 +57,36 @@ Item {
         contentHeight: contentCol.implicitHeight + 32
         clip: true
 
-        // Subtle scroll indicator
-        ScrollBar.vertical: ScrollBar {
-            policy: ScrollBar.AsNeeded
-            contentItem: Rectangle {
-                implicitWidth: 3
-                radius: 2
-                color: Qt.rgba(1, 1, 1, 0.20)
-            }
-        }
-
         Column {
             id: contentCol
             anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 16; leftMargin: 28; rightMargin: 28 }
             spacing: 6
+        }
+    }
+
+    // Custom scroll indicator — plain Rectangle, no QtQuick.Controls
+    Rectangle {
+        anchors { right: parent.right; rightMargin: 2; top: flick.top; bottom: flick.bottom }
+        width:   3
+        radius:  2
+        color:   "transparent"
+
+        Rectangle {
+            width:   parent.width
+            radius:  parent.radius
+            color:   Qt.rgba(1, 1, 1, 0.20)
+
+            // Position and size proportional to the visible area
+            readonly property real ratio:    flick.height / Math.max(flick.contentHeight, flick.height)
+            readonly property real position: flick.contentY / Math.max(flick.contentHeight - flick.height, 1)
+
+            height: Math.max(24, parent.height * ratio)
+            y:      position * (parent.height - height)
+
+            visible: flick.contentHeight > flick.height
+
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+            opacity: flick.moving ? 1.0 : 0.4
         }
     }
 }

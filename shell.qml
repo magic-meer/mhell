@@ -24,6 +24,16 @@ ShellRoot {
         }
     }
 
+    // ── Launcher — one per screen ─────────────────────────────────────────
+    Variants {
+        model: Quickshell.screens
+
+        LauncherWindow {
+            required property var modelData
+            screen: modelData
+        }
+    }
+
     // ── Settings window — single instance, toggled via IPC ────────────────
     SettingsWindow { id: settingsWin }
 }
