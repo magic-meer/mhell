@@ -25,21 +25,35 @@ Planned features and known gaps, roughly in priority order.
 - [x] `STextInput` ready guard — prevents `onTextChanged` firing during component init
 - [x] `SettingsRow` control vertical centering fix (`childrenRect.height` not `parent.height`)
 - [x] Niri startup uses restart loop (`while true; do qs; sleep 2; done`)
+- [x] Settings page switching fixed — pages use manual show/hide, not `visible` bindings
+- [x] `SettingsPage` — removed `QtQuick.Controls` import (Adwaita theme was painting over it)
+- [x] **App launcher** (`LauncherWindow.qml`) — grid launcher with search, icon loading, keyboard nav
+- [x] Launcher replaces fuzzel (`Mod+D` / `Mod+Space` → `toggleLauncher` IPC)
 
 ---
 
 ## Short Term
 
+### Launcher — Spotlight-style redesign
+Current launcher is a basic grid. Planned redesign inspired by macOS Spotlight:
+
+**Animation sequence:**
+1. Trigger (`Mod+D`) → a pill/bar "circles out" from screen center (scale + fade from a point)
+2. The pill is just a search bar at first — minimal, centered, floating
+3. As you type, results "drop" below the search bar like a water droplet separating from the pill
+4. Results panel slides/fades in beneath the search bar, detached
+5. Close → results retract back up, bar collapses back to a point
+
+**Layout:**
+- Search bar: centered, ~600px wide, pill-shaped, large icon + text input
+- Results: appear below the bar, in a clean list (not grid) with icon + name + category
+- Top results highlighted, arrow keys navigate, Enter launches
+- No backdrop dimming — the bar floats over whatever is on screen
+
 ### Settings — missing pages
 The settings window has no page for the SystemTray or the global SettingsUI appearance (accent color, fonts, blur). These should be added:
 - `PageSystemTray.qml` — icon size, spacing
 - `PageAppearance.qml` — accent color, window bg, blur toggle, font family, animation speed
-
-### Bar position live reload
-Changing `bar.position` top ↔ bottom currently requires a quickshell restart because `PanelWindow` anchor bindings are set at creation. Fix: use `Variants` destruction/recreation on position change, or restart via IPC.
-
-### Workspace click keybind feedback
-When clicking a workspace that is already focused, nothing happens visually. Add a brief scale pulse on the highlight to confirm the click was received.
 
 ---
 

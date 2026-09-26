@@ -57,6 +57,7 @@ Bar → BarSection → Loader(moduleData) → [module].qml
 | `Network.qml` | nmcli network state |
 | `SystemTray.qml` | SNI tray items |
 | `SettingsWindow.qml` | Floating settings window + IPC handler |
+| `LauncherWindow.qml` | App launcher overlay (Spotlight-style, in progress) |
 | `settings/SettingsSidebar.qml` | Nav sidebar |
 | `settings/SettingsPage.qml` | Scrollable page base |
 | `settings/controls/` | Reusable UI widgets (SToggle, SSlider, etc.) |
