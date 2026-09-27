@@ -1,122 +1,135 @@
 import QtQuick
+import Quickshell
 
 /**
- * BarPopup — floating pill that slides up from a bar module on hover.
+ * BarPopup — floating popup that appears above a bar module on hover.
+ * Uses PopupWindow with the anchor API so it renders outside PanelWindow clip.
  *
- * Usage: place inside a bar module, pass the parent module's MouseArea
- * containsMouse. Put content in the default slot.
- *
- * The popup positions itself above the parent item, centered horizontally.
- * It auto-dismisses when the mouse leaves both the anchor and the popup.
+ * Usage inside any bar module:
+ *   BarPopup {
+ *       parentWindow:  root.panelWindow   // the PanelWindow
+ *       anchorItem:    root               // the module Item to center above
+ *       anchorHovered: mouse.containsMouse
+ *       SomeContent {}
+ *   }
  */
 Item {
     id: root
 
-    // Whether the anchor (bar module) is hovered
+    property var  parentWindow:  null   // the PanelWindow
+    property var  anchorItem:    parent // module to center popup above
     property bool anchorHovered: false
+    property int  padding:       16
 
-    // Extra padding inside the popup
-    property int  padding: 14
-
-    // Content goes here
     default property alias content: contentCol.data
 
-    // Read-only: use to check if popup or anchor is hovered
-    readonly property bool popupHovered: popupMouse.containsMouse
-    readonly property bool anyHovered:   anchorHovered || popupHovered
+    // ── Hover logic ───────────────────────────────────────────────────────
+    readonly property bool _anyHovered: anchorHovered || (popupWin.visible && popupMouse.containsMouse)
 
-    // ── Visibility / animation ────────────────────────────────────────────
-    property real _progress: 0.0   // 0 = hidden, 1 = fully shown
-
-    onAnyHoveredChanged: {
-        if (anyHovered) showTimer.restart()
-        else            hideTimer.restart()
+    on_AnyHoveredChanged: {
+        if (_anyHovered) {
+            hideTimer.stop()
+            showTimer.restart()
+        } else {
+            showTimer.stop()
+            hideTimer.restart()
+        }
     }
 
-    // Small delay before showing to avoid flicker on quick mouse-throughs
-    Timer {
-        id: showTimer
-        interval: 80
-        onTriggered: if (root.anyHovered) showAnim.start()
+    property real _p: 0.0   // animation progress 0→1
+
+    Timer { id: showTimer; interval: 60; repeat: false
+        onTriggered: { if (!root._anyHovered) return; root._place(); popupWin.visible = true; openAnim.start() }
+    }
+    Timer { id: hideTimer; interval: 120; repeat: false
+        onTriggered: { if (root._anyHovered) return; closeAnim.start() }
     }
 
-    // Small delay before hiding so user can move mouse to popup
-    Timer {
-        id: hideTimer
-        interval: 120
-        onTriggered: if (!root.anyHovered) hideAnim.start()
+    NumberAnimation { id: openAnim;  target: root; property: "_p"; to: 1.0; duration: 180; easing.type: Easing.OutCubic }
+    NumberAnimation { id: closeAnim; target: root; property: "_p"; to: 0.0; duration: 140; easing.type: Easing.InCubic
+        onFinished: popupWin.visible = false
     }
 
-    NumberAnimation {
-        id: showAnim
-        target: root; property: "_progress"
-        to: 1.0; duration: 180; easing.type: Easing.OutCubic
+    // ── Position: map anchorItem into panelWindow coords ──────────────────
+    function _place() {
+        if (!anchorItem || !parentWindow) return
+        // Map anchor item's center to the parentWindow's coordinate space
+        const pt  = anchorItem.mapToItem(null, anchorItem.width / 2, 0)
+        const pw  = Math.max(10, contentCol.implicitWidth  + padding * 2)
+        const ph  = Math.max(10, contentCol.implicitHeight + padding * 2 + 10)
+        // anchor.rect.x/y are relative to the parentWindow
+        popupWin.anchor.rect.x      = Math.round(pt.x - pw / 2)
+        popupWin.anchor.rect.y      = Math.round(pt.y - ph - 6)
+        popupWin.anchor.rect.width  = pw
+        popupWin.anchor.rect.height = ph
     }
 
-    NumberAnimation {
-        id: hideAnim
-        target: root; property: "_progress"
-        to: 0.0; duration: 140; easing.type: Easing.InCubic
-    }
+    // ── Popup window ──────────────────────────────────────────────────────
+    PopupWindow {
+        id: popupWin
+        anchor.window: root.parentWindow
+        visible:       false
+        color:         "transparent"
 
-    // ── Popup container ───────────────────────────────────────────────────
-    // Positioned relative to the bar module (parent of this BarPopup)
-    Item {
-        id: popup
+        implicitWidth:  Math.max(10, contentCol.implicitWidth  + root.padding * 2)
+        implicitHeight: Math.max(10, contentCol.implicitHeight + root.padding * 2 + 10)
 
-        // Size wraps content
-        width:  contentCol.implicitWidth  + root.padding * 2
-        height: contentCol.implicitHeight + root.padding * 2
+        onVisibleChanged: if (visible) root._place()
 
-        // Center horizontally above parent, above the bar
-        x: (parent.width  - width)  / 2
-        y: -(height + 10)
-
-        opacity:        root._progress
-        scale:          0.92 + root._progress * 0.08
-        transformOrigin: Item.Bottom
-
-        visible: root._progress > 0.01
-
-        // Background pill
-        Rectangle {
+        Item {
             anchors.fill: parent
-            radius:       12
-            color:        Qt.rgba(0.08, 0.08, 0.11, 0.97)
-            border.color: Qt.rgba(1, 1, 1, 0.10)
-            border.width: 1
 
-            // Subtle bottom connector pointing at bar
+            // Card background
             Rectangle {
-                anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter; bottomMargin: -4 }
-                width: 8; height: 8; radius: 2
-                rotation: 45
-                color: Qt.rgba(0.08, 0.08, 0.11, 0.97)
-                border.color: Qt.rgba(1, 1, 1, 0.10)
-                border.width: 1
-                // Clip the top half to make a downward arrow
+                anchors { fill: parent; bottomMargin: 10 }
+                radius:          12
+                color:           Qt.rgba(0.08, 0.08, 0.11, 0.97)
+                border.color:    Qt.rgba(1, 1, 1, 0.10)
+                border.width:    1
+                opacity:         root._p
+                scale:           0.94 + root._p * 0.06
+                transformOrigin: Item.Bottom
+            }
+
+            // Arrow nub
+            Item {
+                anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter }
+                width: 14; height: 10
+                opacity: root._p
                 Rectangle {
-                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                    height: parent.height / 2
-                    color: Qt.rgba(0.08, 0.08, 0.11, 0.97)
+                    anchors.centerIn: parent
+                    width: 10; height: 10; rotation: 45
+                    color:        Qt.rgba(0.08, 0.08, 0.11, 0.97)
+                    border.color: Qt.rgba(1, 1, 1, 0.10); border.width: 1
+                    Rectangle {
+                        anchors { top: parent.top; left: parent.left; right: parent.right }
+                        height: parent.height / 2
+                        color:  Qt.rgba(0.08, 0.08, 0.11, 0.97)
+                    }
                 }
             }
-        }
 
-        // Content column
-        Column {
-            id: contentCol
-            anchors.centerIn: parent
-            spacing: 8
-        }
+            // Content
+            Column {
+                id: contentCol
+                anchors {
+                    top: parent.top; topMargin: root.padding
+                    left: parent.left; leftMargin: root.padding
+                    right: parent.right; rightMargin: root.padding
+                }
+                spacing:         8
+                opacity:         root._p
+                scale:           0.94 + root._p * 0.06
+                transformOrigin: Item.Bottom
+            }
 
-        // Mouse area to keep popup alive while hovering it
-        MouseArea {
-            id: popupMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            // Allow wheel events to pass through to content
-            onWheel: wheel => wheel.accepted = false
+            // Keep popup alive when hovering it
+            MouseArea {
+                id: popupMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                onWheel: wheel => wheel.accepted = false
+            }
         }
     }
 }

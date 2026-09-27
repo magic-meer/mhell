@@ -12,6 +12,8 @@ Item {
     implicitWidth:  row.implicitWidth
     implicitHeight: row.implicitHeight
 
+    property var panelWindow: null
+
     // ── Pipewire state ────────────────────────────────────────────────────
     readonly property var  sink:  Pipewire.defaultAudioSink
     readonly property bool ready: sink ? sink.ready : false
@@ -81,6 +83,8 @@ Item {
     // ── Hover popup ───────────────────────────────────────────────────────
     BarPopup {
         id: popup
+        parentWindow:  root.panelWindow
+        anchorItem:    root
         anchorHovered: mouse.containsMouse
         padding: 16
 

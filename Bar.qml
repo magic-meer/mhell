@@ -2,13 +2,12 @@ import QtQuick
 
 /**
  * Bar — reads everything from Settings.bar.
- *
- * Layout sections (left/center/right) are driven by Settings.bar.layout.*
- * which are lists of module name strings. BarSection.qml instantiates the
- * right component for each name.
+ * Receives panelWindow from shell.qml and threads it down to BarSection.
  */
 Item {
     id: root
+
+    property var panelWindow: null
 
     implicitHeight: Settings.bar.height
 
@@ -26,6 +25,7 @@ Item {
     BarSection {
         id: leftSection
         modules: Settings.bar.layout.left
+        panelWindow: root.panelWindow
         anchors {
             left: parent.left
             leftMargin: Settings.bar.paddingSides
@@ -38,6 +38,7 @@ Item {
     BarSection {
         id: centerSection
         modules: Settings.bar.layout.center
+        panelWindow: root.panelWindow
         anchors.centerIn: parent
     }
 
@@ -45,6 +46,7 @@ Item {
     BarSection {
         id: rightSection
         modules: Settings.bar.layout.right
+        panelWindow: root.panelWindow
         layoutDirection: Qt.RightToLeft
         anchors {
             right: parent.right

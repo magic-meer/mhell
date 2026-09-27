@@ -12,6 +12,7 @@ Item {
     implicitWidth:  row.implicitWidth
     implicitHeight: row.implicitHeight
 
+    property var panelWindow: null
     property int percent: 50
 
     readonly property string iconStr: {
@@ -94,6 +95,8 @@ Item {
 
     // ── Hover popup ───────────────────────────────────────────────────────
     BarPopup {
+        parentWindow:  root.panelWindow
+        anchorItem:    root
         anchorHovered: mouse.containsMouse
         padding: 16
 

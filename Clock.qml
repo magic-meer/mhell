@@ -9,6 +9,7 @@ Item {
     readonly property var cfg: Settings.clock
 
     property var now: new Date()
+    property var panelWindow: null
 
     implicitWidth:  col.implicitWidth
     implicitHeight: col.implicitHeight
@@ -55,6 +56,8 @@ Item {
 
     // ── Hover popup — mini calendar ───────────────────────────────────────
     BarPopup {
+        parentWindow:  root.panelWindow
+        anchorItem:    root
         anchorHovered: hoverArea.containsMouse
         padding: 16
 

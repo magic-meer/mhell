@@ -12,6 +12,7 @@ Item {
     implicitWidth:  icon.implicitWidth
     implicitHeight: icon.implicitHeight
 
+    property var    panelWindow: null
     property string state:   "unknown"
     property string ssid:    ""
     property string iface:   ""
@@ -100,6 +101,8 @@ Item {
 
     // ── Hover popup ───────────────────────────────────────────────────────
     BarPopup {
+        parentWindow:  root.panelWindow
+        anchorItem:    root
         anchorHovered: mouse.containsMouse
         padding: 14
 

@@ -8,6 +8,7 @@ ShellRoot {
         model: Quickshell.screens
 
         PanelWindow {
+            id: barWin
             required property var modelData
             screen: modelData
 
@@ -20,7 +21,10 @@ ShellRoot {
             implicitHeight: Settings.bar.height
             color: "transparent"
 
-            Bar { anchors.fill: parent }
+            Bar {
+                anchors.fill: parent
+                panelWindow:  barWin
+            }
         }
     }
 
