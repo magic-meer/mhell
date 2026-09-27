@@ -72,7 +72,7 @@ PanelWindow {
     }
 
     function toggle() {
-        if (_debouncing) return
+        if (_debouncing && !visible) return   // debounce only blocks re-open, not close
         _debouncing = true
         debounceTimer.restart()
         visible ? close() : open()
@@ -211,6 +211,13 @@ PanelWindow {
 
                 property bool _ready: false
                 Component.onCompleted: _ready = true
+
+                Keys.onReturnPressed: win._launchSelected()
+                Keys.onEnterPressed:  win._launchSelected()
+                Keys.onEscapePressed: win.close()
+                Keys.onUpPressed:     win._moveCursor(-1)
+                Keys.onDownPressed:   win._moveCursor(1)
+                Keys.onTabPressed:    win._moveCursor(1)
 
                 onTextChanged: {
                     if (!_ready) return
