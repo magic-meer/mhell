@@ -65,9 +65,9 @@ Item {
 
     // ── Component definitions ─────────────────────────────────────────────
     Component { id: workspacesComp; Workspaces  {} }
-    Component { id: clockComp;      Clock       { panelWindow: root.panelWindow } }
-    Component { id: volumeComp;     Volume      { panelWindow: root.panelWindow } }
-    Component { id: brightnessComp; Brightness  { panelWindow: root.panelWindow } }
-    Component { id: networkComp;    Network     { panelWindow: root.panelWindow } }
+    Component { id: clockComp;      Clock       {} }
+    Component { id: volumeComp;     Volume      {} }
+    Component { id: brightnessComp; Brightness  {} }
+    Component { id: networkComp;    Network     {} }
     Component { id: systemTrayComp; SystemTray  {} }
 }

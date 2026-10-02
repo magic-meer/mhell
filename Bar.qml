@@ -7,8 +7,7 @@ import QtQuick
 Item {
     id: root
 
-    property var panelWindow: null
-
+    property var panelWindow: null   // kept for compatibility, unused by popups now
     implicitHeight: Settings.bar.height
 
     // ── Background ────────────────────────────────────────────────────────

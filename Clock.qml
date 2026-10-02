@@ -1,23 +1,60 @@
 import QtQuick
+import Quickshell
 
 /**
- * Clock — bar module with hover popup showing full date + mini calendar.
+ * Clock — morphs from time-only to time+date on hover.
+ * A mini calendar popup appears above on extended hover.
  */
 Item {
     id: root
 
     readonly property var cfg: Settings.clock
-
     property var now: new Date()
     property var panelWindow: null
 
-    implicitWidth:  col.implicitWidth
-    implicitHeight: col.implicitHeight
-
     Timer {
         interval: cfg.showSeconds ? 1000 : 60000
-        running:  true; repeat: true
+        running: true; repeat: true
         onTriggered: root.now = new Date()
+    }
+
+    // ── Expand state ──────────────────────────────────────────────────────
+    property bool expanded: hoverArea.containsMouse || calPopup.anyHovered
+
+    property real _exp: 0.0
+    Behavior on _exp { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+    onExpandedChanged: _exp = expanded ? 1.0 : 0.0
+
+    // ── Bar display ───────────────────────────────────────────────────────
+    implicitWidth:  col.implicitWidth
+    implicitHeight: Settings.bar.height
+
+    Column {
+        id: col
+        anchors.centerIn: parent
+        spacing: 1
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text:           Qt.formatTime(root.now, cfg.timeFormat)
+            font.family:    cfg.fontFamily
+            font.pixelSize: cfg.timeSize
+            font.weight:    cfg.fontWeight
+            color:          cfg.timeColor
+        }
+
+        // Date line morphs in on hover
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text:           Qt.formatDate(root.now, cfg.dateFormat)
+            font.family:    cfg.fontFamily
+            font.pixelSize: cfg.dateSize
+            color:          Qt.rgba(cfg.dateColor.r, cfg.dateColor.g, cfg.dateColor.b, root._exp)
+            height:         root._exp * implicitHeight
+            clip:           true
+            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on color  { ColorAnimation  { duration: 120 } }
+        }
     }
 
     scale: cfg.hoverEnabled && hoverArea.containsMouse ? cfg.hoverScale : 1.0
@@ -29,129 +66,122 @@ Item {
         hoverEnabled: cfg.hoverEnabled
     }
 
-    // ── Bar display ───────────────────────────────────────────────────────
-    Column {
-        id: col
-        anchors.centerIn: parent
-        spacing: 0
-
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text:           Qt.formatTime(root.now, cfg.timeFormat)
-            font.family:    cfg.fontFamily
-            font.pixelSize: cfg.timeSize
-            font.weight:    cfg.fontWeight
-            color:          cfg.timeColor
-        }
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text:           Qt.formatDate(root.now, cfg.dateFormat)
-            font.family:    cfg.fontFamily
-            font.pixelSize: cfg.dateSize
-            color:          cfg.dateColor
-            visible:        cfg.showDate
-            height:         cfg.showDate ? implicitHeight : 0
-        }
+    // ── Calendar popup (BarPopup + PopupWindow) ────────────────────────────
+    BarPopup {
+        id: calPopup
+        anchorHovered: hoverArea.containsMouse
+        popupHovered:  calWin.visible && calMouse.containsMouse
     }
 
-    // ── Hover popup — mini calendar ───────────────────────────────────────
-    BarPopup {
-        parentWindow:  root.panelWindow
-        anchorItem:    root
-        anchorHovered: hoverArea.containsMouse
-        padding: 16
+    PopupWindow {
+        id: calWin
+        anchor.item:    root
+        anchor.gravity: Edges.Top
+        anchor.edges:   Edges.Bottom
+        anchor.rect.x:  Math.round((root.width - calWin.implicitWidth) / 2)
+        anchor.rect.y:  -8
 
-        Column {
-            spacing: 10
+        visible:       calPopup.visible
+        color:         "transparent"
+        implicitWidth:  230
+        implicitHeight: calContent.implicitHeight + 28
 
-            // Month + year header
-            Row {
-                anchors.horizontalCenter: parent.horizontalCenter
+        Item {
+            anchors.fill: parent
+
+            Rectangle {
+                anchors { fill: parent; bottomMargin: 8 }
+                radius: 12
+                color:  Qt.rgba(0.08, 0.08, 0.11, 0.97)
+                border.color: Qt.rgba(1,1,1,0.10); border.width: 1
+                opacity: calPopup.progress
+                scale:   0.94 + calPopup.progress * 0.06
+                transformOrigin: Item.Bottom
+            }
+            Rectangle {
+                anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter; bottomMargin: 2 }
+                width: 8; height: 8; rotation: 45
+                color: Qt.rgba(0.08,0.08,0.11,0.97)
+                border.color: Qt.rgba(1,1,1,0.10); border.width: 1
+                opacity: calPopup.progress
+                Rectangle {
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    height: parent.height / 2
+                    color:  Qt.rgba(0.08, 0.08, 0.11, 0.97)
+                }
+            }
+
+            Column {
+                id: calContent
+                anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 14; leftMargin: 14; rightMargin: 14 }
                 spacing: 8
+                opacity: calPopup.progress
+                scale:   0.94 + calPopup.progress * 0.06
+                transformOrigin: Item.Bottom
 
+                // Month header
                 Text {
-                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text:           Qt.formatDate(root.now, "MMMM yyyy")
-                    font.family:    cfg.fontFamily
-                    font.pixelSize: 13
-                    font.weight:    Font.SemiBold
-                    color:          Qt.rgba(1, 1, 1, 0.90)
+                    font.family:    cfg.fontFamily; font.pixelSize: 13; font.weight: Font.SemiBold
+                    color:          Qt.rgba(1,1,1,0.90)
                 }
-            }
 
-            // Day-of-week headers
-            Row {
-                spacing: 0
-                Repeater {
-                    model: ["Mo","Tu","We","Th","Fr","Sa","Su"]
-                    Text {
-                        width: 30
-                        text:           modelData
-                        font.family:    cfg.fontFamily
-                        font.pixelSize: 10
-                        color:          Qt.rgba(1, 1, 1, 0.30)
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-                }
-            }
-
-            // Calendar grid
-            Grid {
-                columns: 7
-                spacing: 0
-
-                // Compute first weekday of month (Monday = 0)
-                property int  _year:       root.now.getFullYear()
-                property int  _month:      root.now.getMonth()
-                property int  _today:      root.now.getDate()
-                property int  _daysInMonth: {
-                    const d = new Date(_year, _month + 1, 0)
-                    return d ? d.getDate() : 30
-                }
-                // getDay(): 0=Sun,1=Mon…6=Sat → convert to Mon=0
-                property int  _firstDay:   (new Date(_year, _month, 1).getDay() + 6) % 7
-                property int  _totalCells: _firstDay + _daysInMonth
-
-                Repeater {
-                    model: Math.ceil(parent._totalCells / 7) * 7
-
-                    delegate: Item {
-                        width: 30; height: 26
-
-                        readonly property int dayNum: index - parent._firstDay + 1
-                        readonly property bool isValid: dayNum >= 1 && dayNum <= parent._daysInMonth
-                        readonly property bool isToday: isValid && dayNum === parent._today
-
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: 24; height: 24; radius: 12
-                            visible: isToday
-                            color:   Qt.rgba(0.4, 0.6, 1.0, 0.85)
-                        }
-
+                // Day headers
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    Repeater {
+                        model: ["Mo","Tu","We","Th","Fr","Sa","Su"]
                         Text {
-                            anchors.centerIn: parent
-                            visible:        isValid
-                            text:           dayNum
-                            font.family:    cfg.fontFamily
-                            font.pixelSize: 12
-                            font.weight:    isToday ? Font.Bold : Font.Normal
-                            color:          isToday
-                                ? "white"
-                                : Qt.rgba(1, 1, 1, 0.72)
+                            width: 28; text: modelData
+                            font.family: cfg.fontFamily; font.pixelSize: 10
+                            color: Qt.rgba(1,1,1,0.30); horizontalAlignment: Text.AlignHCenter
                         }
                     }
                 }
+
+                // Calendar grid
+                Grid {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    columns: 7
+                    property int _y:   root.now.getFullYear()
+                    property int _m:   root.now.getMonth()
+                    property int _d:   root.now.getDate()
+                    property int _dim: { const x = new Date(_y, _m+1, 0); return x ? x.getDate() : 30 }
+                    property int _fd:  (new Date(_y, _m, 1).getDay() + 6) % 7
+                    property int _tot: _fd + _dim
+
+                    Repeater {
+                        model: Math.ceil(parent._tot / 7) * 7
+                        delegate: Item {
+                            width: 28; height: 24
+                            readonly property int dn: index - parent._fd + 1
+                            readonly property bool ok: dn >= 1 && dn <= parent._dim
+                            readonly property bool today: ok && dn === parent._d
+                            Rectangle {
+                                anchors.centerIn: parent; width: 22; height: 22; radius: 11
+                                visible: today; color: Qt.rgba(0.4,0.6,1.0,0.85)
+                            }
+                            Text {
+                                anchors.centerIn: parent; visible: ok; text: dn
+                                font.family: cfg.fontFamily; font.pixelSize: 12
+                                font.weight: today ? Font.Bold : Font.Normal
+                                color: today ? "white" : Qt.rgba(1,1,1,0.72)
+                            }
+                        }
+                    }
+                }
+
+                // Full datetime
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text:           Qt.formatDateTime(root.now, "dddd, d MMMM  •  " + cfg.timeFormat)
+                    font.family:    cfg.fontFamily; font.pixelSize: 11
+                    color:          Qt.rgba(1,1,1,0.32)
+                }
             }
 
-            // Full datetime line
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text:           Qt.formatDateTime(root.now, "dddd, d MMMM yyyy  •  " + cfg.timeFormat)
-                font.family:    cfg.fontFamily
-                font.pixelSize: 11
-                color:          Qt.rgba(1, 1, 1, 0.35)
-            }
+            MouseArea { id: calMouse; anchors.fill: parent; hoverEnabled: true; onWheel: e => e.accepted = false }
         }
     }
 }

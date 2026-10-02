@@ -2,92 +2,116 @@ import QtQuick
 import Quickshell.Io
 
 /**
- * Network — bar module with hover popup showing connection details.
+ * Network — morphs from icon to icon+ssid on hover. Click opens iwgtk.
  */
 Item {
     id: root
 
     readonly property var cfg: Settings.network
 
-    implicitWidth:  icon.implicitWidth
-    implicitHeight: icon.implicitHeight
-
-    property var    panelWindow: null
-    property string state:   "unknown"
-    property string ssid:    ""
-    property string iface:   ""
+    property string state:  "unknown"
+    property string ssid:   ""
+    property string iface:  ""
 
     readonly property string iconStr: {
         if (state === "connected")    return cfg.iconConnected
         if (state === "disconnected") return cfg.iconDisconnected
         return cfg.iconUnknown
     }
-    readonly property bool  iconIsPath: Settings.isIconPath(iconStr)
     readonly property color iconColor: {
         if (state === "connected")    return cfg.colorConnected
         if (state === "disconnected") return cfg.colorDisconnected
         return cfg.colorUnknown
     }
+    readonly property string displayText: {
+        if (state === "connected")    return ssid.length > 0 ? ssid : "Connected"
+        if (state === "disconnected") return "No network"
+        return "Checking…"
+    }
 
-    // ── Poll nmcli ────────────────────────────────────────────────────────
+    // ── Poll ──────────────────────────────────────────────────────────────
     Process {
         id: pollProc
-        // Get connectivity + active wifi SSID + interface
-        command: ["bash", "-c", "nmcli -t -f CONNECTIVITY g; nmcli -t -f ACTIVE,SSID,DEVICE dev wifi 2>/dev/null | grep '^yes' | head -1"]
+        command: ["bash", "-c",
+            "nmcli -t -f CONNECTIVITY g; nmcli -t -f ACTIVE,SSID,DEVICE dev wifi 2>/dev/null | grep '^yes' | head -1"
+        ]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = text.trim().split("\n")
                 const conn  = (lines[0] || "").toLowerCase()
-                if (conn === "full" || conn === "limited")
-                    root.state = "connected"
-                else if (conn === "none" || conn === "portal")
-                    root.state = "disconnected"
-                else
-                    root.state = "unknown"
-
-                // Parse wifi line: yes:SSID:device
+                root.state = (conn === "full" || conn === "limited") ? "connected"
+                           : (conn === "none" || conn === "portal")  ? "disconnected"
+                           : "unknown"
                 if (lines[1]) {
-                    const parts = lines[1].split(":")
-                    root.ssid  = parts[1] || ""
-                    root.iface = parts[2] || ""
+                    const p = lines[1].split(":")
+                    root.ssid  = p[1] || ""
+                    root.iface = p[2] || ""
                 } else {
-                    root.ssid  = ""
-                    root.iface = ""
+                    root.ssid = ""; root.iface = ""
                 }
             }
         }
     }
-
-    Timer {
-        interval: cfg.pollInterval; running: true; repeat: true
-        onTriggered: pollProc.running = true
-    }
-
+    Timer { interval: cfg.pollInterval; running: true; repeat: true; onTriggered: pollProc.running = true }
     Process { id: iwgtkProc; command: ["iwgtk"] }
 
-    // ── Bar display ───────────────────────────────────────────────────────
+    // ── Expand state ──────────────────────────────────────────────────────
+    property bool expanded: mouse.containsMouse
+
+    property real _exp: 0.0
+    Behavior on _exp { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+    onExpandedChanged: _exp = expanded ? 1.0 : 0.0
+
+    readonly property real _textW:     Math.min(120, ssidMetrics.width + 8)
+    readonly property real _collapsedW: cfg.iconSize + 4
+    readonly property real _expandedW:  cfg.iconSize + 4 + _textW
+
+    implicitWidth:  _collapsedW + (_expandedW - _collapsedW) * _exp
+    implicitHeight: Settings.bar.height
+
+    Behavior on implicitWidth { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+
+    TextMetrics { id: ssidMetrics; font.family: cfg.fontFamily; font.pixelSize: 12; text: root.displayText }
+
+    // ── Pill background ───────────────────────────────────────────────────
+    Rectangle {
+        anchors { fill: parent; topMargin: 4; bottomMargin: 4 }
+        radius:  height / 2
+        color:   Qt.rgba(1, 1, 1, 0.07 * root._exp)
+        border.color: Qt.rgba(1, 1, 1, 0.10 * root._exp)
+        border.width: 1
+        Behavior on color { ColorAnimation { duration: 180 } }
+    }
+
+    // ── Icon ──────────────────────────────────────────────────────────────
     Text {
-        id: icon
-        visible:        !root.iconIsPath
-        anchors.centerIn: parent
+        id: netIcon
+        anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
         text:           root.iconStr
         font.family:    cfg.fontFamily
         font.pixelSize: cfg.iconSize
         color:          root.iconColor
         Behavior on color { ColorAnimation { duration: 200 } }
     }
-    Image {
-        id: iconImg
-        visible:        root.iconIsPath
-        anchors.centerIn: parent
-        source:         root.iconIsPath ? root.iconStr : ""
-        width:          cfg.iconSize; height: cfg.iconSize
-        fillMode:       Image.PreserveAspectFit; smooth: true; mipmap: true
-        opacity:        state === "disconnected" ? 0.35 : 1.0
-        Behavior on opacity { NumberAnimation { duration: 200 } }
+
+    // ── SSID label (slides in) ─────────────────────────────────────────────
+    Text {
+        anchors {
+            left:   netIcon.right; leftMargin: 6
+            verticalCenter: parent.verticalCenter
+        }
+        text:           root.displayText
+        font.family:    cfg.fontFamily
+        font.pixelSize: 12
+        color:          Qt.rgba(1, 1, 1, 0.80 * root._exp)
+        clip:           true
+        width:          root._textW * root._exp
+        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
     }
 
+    // ── Hover + click ─────────────────────────────────────────────────────
     scale: cfg.hoverEnabled && mouse.containsMouse ? cfg.hoverScale : 1.0
     Behavior on scale { NumberAnimation { duration: cfg.hoverDuration; easing.type: Easing.OutCubic } }
 
@@ -97,68 +121,5 @@ Item {
         hoverEnabled: true
         cursorShape:  Qt.PointingHandCursor
         onClicked:    iwgtkProc.running = true
-    }
-
-    // ── Hover popup ───────────────────────────────────────────────────────
-    BarPopup {
-        parentWindow:  root.panelWindow
-        anchorItem:    root
-        anchorHovered: mouse.containsMouse
-        padding: 14
-
-        Column {
-            spacing: 6
-
-            // Status row
-            Row {
-                spacing: 8
-                Text {
-                    text:           root.iconStr
-                    font.family:    cfg.fontFamily
-                    font.pixelSize: 18
-                    color:          root.iconColor
-                    anchors.verticalCenter: parent.verticalCenter
-                    Behavior on color { ColorAnimation { duration: 200 } }
-                }
-                Column {
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2
-                    Text {
-                        text: root.state === "connected"
-                            ? (root.ssid.length > 0 ? root.ssid : "Connected")
-                            : root.state === "disconnected"
-                                ? "No connection"
-                                : "Checking…"
-                        font.family:    cfg.fontFamily
-                        font.pixelSize: 13
-                        font.weight:    Font.Medium
-                        color:          Qt.rgba(1, 1, 1, 0.90)
-                    }
-                    Text {
-                        visible: root.iface.length > 0
-                        text:    root.iface
-                        font.family:    cfg.fontFamily
-                        font.pixelSize: 11
-                        color:          Qt.rgba(1, 1, 1, 0.40)
-                    }
-                }
-            }
-
-            // Divider
-            Rectangle {
-                width: parent.width; height: 1
-                color: Qt.rgba(1, 1, 1, 0.07)
-            }
-
-            // Open manager hint
-            Text {
-                text:           "Click to open network manager"
-                font.family:    cfg.fontFamily
-                font.pixelSize: 11
-                color:          Qt.rgba(1, 1, 1, 0.28)
-                horizontalAlignment: Text.AlignHCenter
-                width:          parent.width
-            }
-        }
     }
 }
