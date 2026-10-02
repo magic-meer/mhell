@@ -11,14 +11,12 @@ import Quickshell.Io
  *
  * Exposed:
  *   workspaces  — sorted list of workspace objects (by idx)
- *   windows     — map of window id → window object
  */
 Singleton {
     id: root
 
     // ── Public state ──────────────────────────────────────────────────────
     property var workspaces: []
-    property var windows: ({})
 
     // ── Event-stream process ──────────────────────────────────────────────
     Process {
@@ -57,14 +55,6 @@ Singleton {
             const sorted = evt.WorkspacesChanged.workspaces.slice()
             sorted.sort(function(a, b) { return a.idx - b.idx })
             root.workspaces = sorted
-
-        } else if (evt.WindowsChanged) {
-            const map = {}
-            for (let i = 0; i < evt.WindowsChanged.windows.length; i++) {
-                const w = evt.WindowsChanged.windows[i]
-                map[w.id] = w
-            }
-            root.windows = map
 
         } else if (evt.WorkspaceActivated) {
             // Partial update: flip is_active/is_focused without a full reload

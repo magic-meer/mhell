@@ -31,14 +31,6 @@ SettingsPage {
         }
 
         SettingsRow {
-            label: "Show Date"
-            SToggle {
-                checked:   Settings.clock.showDate
-                onToggled: val => Settings.clock.showDate = val
-            }
-        }
-
-        SettingsRow {
             label:       "Show Seconds"
             description: "Add :ss to your time format above"
             last:        true

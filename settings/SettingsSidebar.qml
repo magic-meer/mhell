@@ -40,7 +40,7 @@ Item {
             text: "Settings"
             font.family:    cfg.fontFamily
             font.pixelSize: 15
-            font.weight:    Font.SemiBold
+            font.weight:    Font.DemiBold
             color:          cfg.textPrimary
         }
     }

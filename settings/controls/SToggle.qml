@@ -34,8 +34,6 @@ Item {
             color: "white"
 
             // Subtle shadow
-            layer.enabled: true
-            layer.effect: null   // no ShaderEffect dependency — shadow via border
             border.color: Qt.rgba(0, 0, 0, 0.15)
             border.width: 1
 

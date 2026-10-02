@@ -4,8 +4,11 @@ import ".."
 import "../.."
 
 SettingsPage {
+    id:       root
     title:    "Bar"
     subtitle: "Geometry, appearance and layout"
+
+    function _toList(val) { return val.split(",").map(s => s.trim()).filter(s => s.length > 0) }
 
     // ── Geometry ──────────────────────────────────────────────────────────
     SettingsGroup {
@@ -154,7 +157,7 @@ SettingsPage {
             STextInput {
                 value:       Settings.bar.layout.left.join(", ")
                 placeholder: "workspaces"
-                onCommitted: val => Settings.bar.layout.left = val.split(",").map(s => s.trim()).filter(s => s.length > 0)
+                onCommitted: val => Settings.bar.layout.left = _toList(val)
             }
         }
 
@@ -164,7 +167,7 @@ SettingsPage {
             STextInput {
                 value:       Settings.bar.layout.center.join(", ")
                 placeholder: "clock"
-                onCommitted: val => Settings.bar.layout.center = val.split(",").map(s => s.trim()).filter(s => s.length > 0)
+                onCommitted: val => Settings.bar.layout.center = _toList(val)
             }
         }
 
@@ -175,7 +178,7 @@ SettingsPage {
             STextInput {
                 value:       Settings.bar.layout.right.join(", ")
                 placeholder: "network, brightness, volume"
-                onCommitted: val => Settings.bar.layout.right = val.split(",").map(s => s.trim()).filter(s => s.length > 0)
+                onCommitted: val => Settings.bar.layout.right = _toList(val)
             }
         }
     }

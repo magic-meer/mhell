@@ -23,7 +23,6 @@ ShellRoot {
 
             Bar {
                 anchors.fill: parent
-                panelWindow:  barWin
             }
         }
     }

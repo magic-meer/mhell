@@ -10,7 +10,6 @@ Item {
 
     readonly property var cfg: Settings.clock
     property var now: new Date()
-    property var panelWindow: null
 
     Timer {
         interval: cfg.showSeconds ? 1000 : 60000
@@ -20,10 +19,6 @@ Item {
 
     // ── Expand state ──────────────────────────────────────────────────────
     property bool expanded: hoverArea.containsMouse || calPopup.anyHovered
-
-    property real _exp: 0.0
-    Behavior on _exp { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-    onExpandedChanged: _exp = expanded ? 1.0 : 0.0
 
     // ── Bar display ───────────────────────────────────────────────────────
     implicitWidth:  col.implicitWidth
@@ -49,11 +44,10 @@ Item {
             text:           Qt.formatDate(root.now, cfg.dateFormat)
             font.family:    cfg.fontFamily
             font.pixelSize: cfg.dateSize
-            color:          Qt.rgba(cfg.dateColor.r, cfg.dateColor.g, cfg.dateColor.b, root._exp)
-            height:         root._exp * implicitHeight
+            color:          Qt.rgba(cfg.dateColor.r, cfg.dateColor.g, cfg.dateColor.b, root.expanded ? 1 : 0)
+            height:         root.expanded ? implicitHeight : 0
             clip:           true
             Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-            Behavior on color  { ColorAnimation  { duration: 120 } }
         }
     }
 
@@ -81,7 +75,7 @@ Item {
         anchor.rect.x:  Math.round((root.width - calWin.implicitWidth) / 2)
         anchor.rect.y:  -8
 
-        visible:       calPopup.visible
+        visible:       calPopup.popupVisible
         color:         "transparent"
         implicitWidth:  230
         implicitHeight: calContent.implicitHeight + 28
@@ -123,7 +117,7 @@ Item {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text:           Qt.formatDate(root.now, "MMMM yyyy")
-                    font.family:    cfg.fontFamily; font.pixelSize: 13; font.weight: Font.SemiBold
+                    font.family:    cfg.fontFamily; font.pixelSize: 13; font.weight: Font.DemiBold
                     color:          Qt.rgba(1,1,1,0.90)
                 }
 

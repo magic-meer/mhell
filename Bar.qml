@@ -2,12 +2,10 @@ import QtQuick
 
 /**
  * Bar — reads everything from Settings.bar.
- * Receives panelWindow from shell.qml and threads it down to BarSection.
  */
 Item {
     id: root
 
-    property var panelWindow: null   // kept for compatibility, unused by popups now
     implicitHeight: Settings.bar.height
 
     // ── Background ────────────────────────────────────────────────────────
@@ -22,9 +20,7 @@ Item {
 
     // ── Left section ──────────────────────────────────────────────────────
     BarSection {
-        id: leftSection
         modules: Settings.bar.layout.left
-        panelWindow: root.panelWindow
         anchors {
             left: parent.left
             leftMargin: Settings.bar.paddingSides
@@ -35,17 +31,13 @@ Item {
 
     // ── Center section ────────────────────────────────────────────────────
     BarSection {
-        id: centerSection
         modules: Settings.bar.layout.center
-        panelWindow: root.panelWindow
         anchors.centerIn: parent
     }
 
     // ── Right section ─────────────────────────────────────────────────────
     BarSection {
-        id: rightSection
         modules: Settings.bar.layout.right
-        panelWindow: root.panelWindow
         layoutDirection: Qt.RightToLeft
         anchors {
             right: parent.right

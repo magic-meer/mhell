@@ -103,7 +103,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 text:        modelData.idx
-                font.family: cfg.fontFamily !== undefined ? cfg.fontFamily : "JetBrainsMono Nerd Font"
+                font.family: "JetBrainsMono Nerd Font"
                 font.pixelSize: cfg.numberSize
                 color:       Qt.rgba(1, 1, 1, 0.9)
                 visible:     cfg.showNumbers

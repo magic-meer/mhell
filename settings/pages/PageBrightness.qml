@@ -48,27 +48,11 @@ SettingsPage {
         label: "Display"
 
         SettingsRow {
-            label: "Show Label"
-            SToggle {
-                checked:   Settings.brightness.showLabel
-                onToggled: val => Settings.brightness.showLabel = val
-            }
-        }
-
-        SettingsRow {
             label: "Icon Size"
+            last:  true
             SSpinBox {
                 value: Settings.brightness.iconSize; from: 8; to: 32; suffix: "px"
                 onEdited: val => Settings.brightness.iconSize = val
-            }
-        }
-
-        SettingsRow {
-            label: "Label Size"
-            last:  true
-            SSpinBox {
-                value: Settings.brightness.labelSize; from: 8; to: 24; suffix: "px"
-                onEdited: val => Settings.brightness.labelSize = val
             }
         }
     }
@@ -78,18 +62,10 @@ SettingsPage {
 
         SettingsRow {
             label: "Icon Color"
+            last:  true
             SColorSwatch {
                 value:          Settings.brightness.iconColor
                 onPicked: c => Settings.brightness.iconColor = c
-            }
-        }
-
-        SettingsRow {
-            label: "Label Color"
-            last:  true
-            SColorSwatch {
-                value:          Settings.brightness.labelColor
-                onPicked: c => Settings.brightness.labelColor = c
             }
         }
     }

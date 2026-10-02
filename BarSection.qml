@@ -15,7 +15,6 @@ Item {
 
     property var    modules:         []
     property int    layoutDirection: Qt.LeftToRight
-    property var    panelWindow:     null
 
     implicitWidth:  row.implicitWidth
     implicitHeight: row.implicitHeight

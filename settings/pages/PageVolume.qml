@@ -49,27 +49,11 @@ SettingsPage {
         label: "Display"
 
         SettingsRow {
-            label: "Show Label"
-            SToggle {
-                checked:   Settings.volume.showLabel
-                onToggled: val => Settings.volume.showLabel = val
-            }
-        }
-
-        SettingsRow {
             label: "Icon Size"
+            last:  true
             SSpinBox {
                 value: Settings.volume.iconSize; from: 8; to: 32; suffix: "px"
                 onEdited: val => Settings.volume.iconSize = val
-            }
-        }
-
-        SettingsRow {
-            label: "Label Size"
-            last:  true
-            SSpinBox {
-                value: Settings.volume.labelSize; from: 8; to: 24; suffix: "px"
-                onEdited: val => Settings.volume.labelSize = val
             }
         }
     }
@@ -87,26 +71,10 @@ SettingsPage {
 
         SettingsRow {
             label: "Icon Muted Color"
+            last:  true
             SColorSwatch {
                 value:          Settings.volume.iconMutedColor
                 onPicked: c => Settings.volume.iconMutedColor = c
-            }
-        }
-
-        SettingsRow {
-            label: "Label Color"
-            SColorSwatch {
-                value:          Settings.volume.labelColor
-                onPicked: c => Settings.volume.labelColor = c
-            }
-        }
-
-        SettingsRow {
-            label: "Label Muted Color"
-            last:  true
-            SColorSwatch {
-                value:          Settings.volume.labelMutedColor
-                onPicked: c => Settings.volume.labelMutedColor = c
             }
         }
     }

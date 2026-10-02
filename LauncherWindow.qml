@@ -39,7 +39,6 @@ PanelWindow {
     property int  _selected:   0
     property bool _ready:      false
     property bool _debouncing: false
-    property bool _showResults: false
 
     // Animation phases
     property real _barScale:      0.0   // 0→1 bar open
@@ -58,7 +57,6 @@ PanelWindow {
         if (visible) return
         visible = true
         searchField.text = ""
-        _showResults = false
         _selected    = 0
         if (!_ready) _scanApps()
         else _applyFilter()
@@ -105,31 +103,13 @@ PanelWindow {
             NumberAnimation { target: win; property: "_backdropOpacity"; to: 0.0; duration: 200; easing.type: Easing.InCubic }
         }
         PropertyAction { target: win; property: "visible"; value: false }
-        ScriptAction { script: { searchField.text = ""; win._showResults = false } }
+        ScriptAction { script: { searchField.text = "" } }
     }
 
     // ── Results drop animation ────────────────────────────────────────────
     Behavior on _resultsHeight {
         enabled: win._barScale >= 0.9   // only animate after bar is open
         NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
-    }
-
-    // ── Keyboard ──────────────────────────────────────────────────────────
-    Item {
-        id: keyReceiver
-        anchors.fill: parent
-        focus: win.visible
-
-        Keys.onEscapePressed:  win.close()
-        Keys.onReturnPressed:  win._launchSelected()
-        Keys.onEnterPressed:   win._launchSelected()
-        Keys.onTabPressed:     win._moveCursor(1)
-        Keys.onUpPressed:      win._moveCursor(-1)
-        Keys.onDownPressed:    win._moveCursor(1)
-        Keys.onPressed: event => {
-            if (event.text.length === 1 && !event.isAutoRepeat)
-                searchField.forceActiveFocus()
-        }
     }
 
     // ── Dimmed backdrop ───────────────────────────────────────────────────
@@ -180,26 +160,13 @@ PanelWindow {
                 }
             }
 
-            // Search icon
-            Text {
-                id: searchIcon
-                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                text:           ""
-                font.family:    "JetBrainsMono Nerd Font"
-                font.pixelSize: 20
-                color:          searchField.text.length > 0
-                    ? Qt.rgba(0.4, 0.6, 1.0, 0.90)
-                    : Qt.rgba(1, 1, 1, 0.35)
-                Behavior on color { ColorAnimation { duration: 150 } }
-            }
-
             // Text input
             TextInput {
                 id: searchField
                 anchors {
-                    left:            searchIcon.right
+                    left:            parent.left
                     right:           clearBtn.left
-                    leftMargin:      12
+                    leftMargin:      32
                     rightMargin:     8
                     verticalCenter:  parent.verticalCenter
                 }
@@ -224,13 +191,11 @@ PanelWindow {
                     win._applyFilter()
                     // Trigger results drop when text is entered
                     if (text.length > 0 && win._filtered.length > 0) {
-                        win._showResults = true
                         win._resultsHeight = Math.min(
                             win._filtered.length * win.resultItemH,
                             win.maxResultsH
                         )
                     } else if (text.length === 0) {
-                        win._showResults = false
                         win._resultsHeight = 0
                     }
                 }

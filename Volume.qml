@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Services.Pipewire
+import "settings/controls"
 
 /**
  * Volume — morphs from icon into icon+slider on hover.
@@ -62,14 +63,7 @@ Item {
         text:           root.iconStr
         font.family:    cfg.fontFamily
         font.pixelSize: cfg.iconSize
-        color:          root.muted
-            ? cfg.iconMutedColor
-            : Qt.rgba(
-                Qt.rgba(1,1,1,0.85).r,
-                Qt.rgba(1,1,1,0.85).g,
-                Qt.rgba(1,1,1,0.85).b,
-                0.85
-              )
+        color:          root.muted ? cfg.iconMutedColor : cfg.iconColor
 
         // Scale bounce on mute toggle
         scale: root._exp > 0.5 && muteMouse.pressed ? 0.85 : 1.0
@@ -86,63 +80,27 @@ Item {
     }
 
     // ── Slider (fades in as module expands) ───────────────────────────────
-    Item {
-        id: sliderArea
+    SSlider {
         anchors {
             left:   iconText.right; leftMargin:  8
             right:  levelLabel.left; rightMargin: 8
             verticalCenter: parent.verticalCenter
         }
-        height: 28
+        height:  28
         opacity: root._exp
         visible: root._exp > 0.01
 
-        readonly property real frac: root.audio
-            ? Math.max(0, Math.min(1, root.audio.volume / cfg.maxVolume))
-            : 0
+        value: root.audio ? Math.max(0, Math.min(1, root.audio.volume / cfg.maxVolume)) : 0
+        from:  0
+        to:    1
 
-        // Track
-        Rectangle {
-            id: track
-            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
-            height: 4; radius: 2
-            color: Qt.rgba(1, 1, 1, 0.15)
-
-            // Fill
-            Rectangle {
-                width:  Math.max(thumb.width / 2, track.width * sliderArea.frac)
-                height: parent.height; radius: parent.radius
-                color:  root.muted ? Qt.rgba(1,1,1,0.25) : Qt.rgba(0.4, 0.6, 1.0, 0.90)
-                Behavior on width { NumberAnimation { duration: 60 } }
-                Behavior on color { ColorAnimation { duration: 120 } }
-            }
-        }
-
-        // Thumb
-        Rectangle {
-            id: thumb
-            width: 14; height: 14; radius: 7
-            color: "white"
-            border.color: Qt.rgba(0,0,0,0.15); border.width: 1
-            x: (track.width - width) * sliderArea.frac
-            anchors.verticalCenter: track.verticalCenter
-            scale: sliderMouse.pressed ? 1.30 : sliderMouse.containsMouse ? 1.15 : 1.0
-            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-            Behavior on x     { NumberAnimation { duration: 60 } }
-        }
+        onEdited: val => { if (root.ready && root.audio) root.audio.volume = val * cfg.maxVolume }
 
         MouseArea {
             id: sliderMouse
-            anchors { fill: parent; margins: -8 }
+            anchors.fill: parent
             hoverEnabled: true
-            preventStealing: true
-            function setVol(mx) {
-                if (!root.ready || !root.audio) return
-                const frac = Math.max(0, Math.min(1, mx / track.width))
-                root.audio.volume = frac * cfg.maxVolume
-            }
-            onPressed:       e => setVol(e.x)
-            onMouseXChanged: if (pressed) setVol(mouseX)
+            acceptedButtons: Qt.NoButton
             onWheel: e => {
                 if (!root.ready || !root.audio) return
                 const d = e.angleDelta.y > 0 ? cfg.scrollStep : -cfg.scrollStep

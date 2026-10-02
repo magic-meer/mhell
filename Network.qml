@@ -11,7 +11,6 @@ Item {
 
     property string state:  "unknown"
     property string ssid:   ""
-    property string iface:  ""
 
     readonly property string iconStr: {
         if (state === "connected")    return cfg.iconConnected
@@ -46,9 +45,8 @@ Item {
                 if (lines[1]) {
                     const p = lines[1].split(":")
                     root.ssid  = p[1] || ""
-                    root.iface = p[2] || ""
                 } else {
-                    root.ssid = ""; root.iface = ""
+                    root.ssid = ""
                 }
             }
         }

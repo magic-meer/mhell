@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import "settings/controls"
 
 /**
  * Brightness — morphs from icon into icon+slider on hover.
@@ -79,8 +80,7 @@ Item {
     }
 
     // ── Slider ────────────────────────────────────────────────────────────
-    Item {
-        id: sliderArea
+    SSlider {
         anchors {
             left:   iconText.right; leftMargin:  8
             right:  pctLabel.left;  rightMargin: 8
@@ -90,45 +90,20 @@ Item {
         opacity: root._exp
         visible: root._exp > 0.01
 
-        readonly property real frac: root.percent / 100.0
+        value: root.percent / 100
+        from:  0
+        to:    1
 
-        Rectangle {
-            id: track
-            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
-            height: 4; radius: 2
-            color: Qt.rgba(1, 1, 1, 0.15)
+        // Warm yellow for brightness
+        fillColor: Qt.rgba(1.0, 0.85, 0.25, 0.90)
 
-            Rectangle {
-                width:  Math.max(thumb.width / 2, track.width * sliderArea.frac)
-                height: parent.height; radius: parent.radius
-                // Warm yellow for brightness
-                color:  Qt.rgba(1.0, 0.85, 0.25, 0.90)
-                Behavior on width { NumberAnimation { duration: 60 } }
-            }
-        }
-
-        Rectangle {
-            id: thumb
-            width: 14; height: 14; radius: 7
-            color: "white"
-            border.color: Qt.rgba(0,0,0,0.15); border.width: 1
-            x: (track.width - width) * sliderArea.frac
-            anchors.verticalCenter: track.verticalCenter
-            scale: sliderMouse.pressed ? 1.30 : sliderMouse.containsMouse ? 1.15 : 1.0
-            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-            Behavior on x     { NumberAnimation { duration: 60 } }
-        }
+        onEdited: val => root.setBrightness(Math.round(val * 100))
 
         MouseArea {
             id: sliderMouse
-            anchors { fill: parent; margins: -8 }
+            anchors.fill: parent
             hoverEnabled: true
-            preventStealing: true
-            function setPct(mx) {
-                root.setBrightness(Math.round(Math.max(0, Math.min(1, mx / track.width)) * 100))
-            }
-            onPressed:       e => setPct(e.x)
-            onMouseXChanged: if (pressed) setPct(mouseX)
+            acceptedButtons: Qt.NoButton
             onWheel: e => {
                 const d = e.angleDelta.y > 0 ? cfg.scrollStep : -cfg.scrollStep
                 root.setBrightness(root.percent + d)

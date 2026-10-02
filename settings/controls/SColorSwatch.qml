@@ -36,6 +36,7 @@ Item {
             color: "transparent"
             clip: true
             z: -1
+            visible: root.value.a < 1
 
             Grid {
                 anchors.fill: parent
@@ -113,30 +114,19 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width:  parent.width - 50
                         from:   0; to: 1; decimal: 2
-                        value: {
-                            if (index === 0) return root.value.r
-                            if (index === 1) return root.value.g
-                            if (index === 2) return root.value.b
-                            return root.value.a
-                        }
+                        value: root.value[ ["r", "g", "b", "a"][index] ]
                         onEdited: val => {
-                            let c = root.value
-                            if (index === 0) root.picked(Qt.rgba(val,   c.g,  c.b,  c.a))
-                            else if (index === 1) root.picked(Qt.rgba(c.r, val,   c.b,  c.a))
-                            else if (index === 2) root.picked(Qt.rgba(c.r, c.g,   val,  c.a))
-                            else root.picked(Qt.rgba(c.r, c.g, c.b, val))
+                            const c = [root.value.r, root.value.g, root.value.b, root.value.a]
+                            c[index] = val
+                            root.picked(Qt.rgba(c[0], c[1], c[2], c[3]))
                             Settings.scheduleSave()
                         }
                     }
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: {
-                            if (index === 0) return Math.round(root.value.r * 255)
-                            if (index === 1) return Math.round(root.value.g * 255)
-                            if (index === 2) return Math.round(root.value.b * 255)
-                            return root.value.a.toFixed(2)
-                        }
+                        text: index === 3 ? root.value.a.toFixed(2)
+                                          : Math.round(root.value[["r", "g", "b"][index]] * 255)
                         width:          24
                         font.family:    cfg.fontFamily
                         font.pixelSize: 11

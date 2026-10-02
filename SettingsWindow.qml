@@ -34,30 +34,12 @@ FloatingWindow {
     // ── External close (e.g. Mod+Q kills the window via compositor) ───────
     // When visible flips to false without going through toggle(), stop any
     // running animations and reset state so the next open works cleanly.
-    onVisibleChanged: {
-        if (!visible) {
-            openAnim.stop()
-            closeAnim.stop()
-            if (content) {
-                content.opacity = 1
-                content.scale   = 1
-            }
-            _toggling = false
-            debounceTimer.stop()
-        }
-    }
+    onVisibleChanged: if (!visible) _resetAnim()
 
     // Intercept compositor close request (Mod+Q) — hide instead of destroy
     onClosed: {
-        openAnim.stop()
-        closeAnim.stop()
-        if (content) {
-            content.opacity = 1
-            content.scale   = 1
-        }
-        _toggling    = false
-        win.visible  = false
-        debounceTimer.stop()
+        _resetAnim()
+        win.visible = false
     }
 
     // ── IPC handler — called by keybind / desktop entry ───────────────────
@@ -66,20 +48,36 @@ FloatingWindow {
         function toggleSettings() { win.toggle() }
     }
 
-    // Debounce guard — ignores repeated calls within 600ms (key repeat / double trigger)
-    property bool _toggling: false
-
     function toggle() {
         if (_toggling) return
         _toggling = true
         debounceTimer.restart()
 
         if (win.visible) {
-            closeAnim.start()
+            content.opacity = 0
+            content.scale   = 0.94
         } else {
             win.visible = true
-            openAnim.start()
+            content.opacity = 1
+            content.scale   = 1
         }
+        // Restarted on open too, so a close already in flight can't hide the
+        // window we just reopened — the onTriggered opacity check drops it.
+        hideTimer.restart()
+    }
+
+    // Debounce guard — ignores repeated calls within 600ms (key repeat / double trigger)
+    property bool _toggling: false
+
+    // Snap everything back to the resting open state and cancel pending hides
+    function _resetAnim() {
+        hideTimer.stop()
+        if (content) {
+            content.opacity = 1
+            content.scale   = 1
+        }
+        _toggling = false
+        debounceTimer.stop()
     }
 
     Timer {
@@ -89,25 +87,11 @@ FloatingWindow {
         onTriggered: win._toggling = false
     }
 
-    // ── Open animation ────────────────────────────────────────────────────
-    SequentialAnimation {
-        id: openAnim
-        PropertyAction  { target: content; property: "opacity"; value: 0 }
-        PropertyAction  { target: content; property: "scale";   value: 0.94 }
-        ParallelAnimation {
-            NumberAnimation { target: content; property: "opacity"; to: 1;    duration: cfg.animDuration; easing.type: Easing.OutCubic }
-            NumberAnimation { target: content; property: "scale";   to: 1.0;  duration: cfg.animDuration; easing.type: Easing.OutCubic }
-        }
-    }
-
-    // ── Close animation ───────────────────────────────────────────────────
-    SequentialAnimation {
-        id: closeAnim
-        ParallelAnimation {
-            NumberAnimation { target: content; property: "opacity"; to: 0;    duration: cfg.animDuration; easing.type: Easing.InCubic }
-            NumberAnimation { target: content; property: "scale";   to: 0.94; duration: cfg.animDuration; easing.type: Easing.InCubic }
-        }
-        PropertyAction { target: win; property: "visible"; value: false }
+    Timer {
+        id: hideTimer
+        interval: cfg.animDuration
+        repeat:   false
+        onTriggered: if (win.visible && content.opacity < 1) win.visible = false
     }
 
     // ── Root content ──────────────────────────────────────────────────────
@@ -115,6 +99,9 @@ FloatingWindow {
         id: content
         anchors.fill: parent
         transformOrigin: Item.Center
+
+        Behavior on opacity { NumberAnimation { duration: cfg.animDuration; easing.type: Easing.OutCubic } }
+        Behavior on scale   { NumberAnimation { duration: cfg.animDuration; easing.type: Easing.OutCubic } }
 
         // Window background (when not using Niri blur)
         Rectangle {
@@ -157,13 +144,7 @@ FloatingWindow {
             PageNetwork    { id: p5; anchors.fill: parent; visible: false }
 
             function pageAt(i) {
-                if (i === 0) return p0
-                if (i === 1) return p1
-                if (i === 2) return p2
-                if (i === 3) return p3
-                if (i === 4) return p4
-                if (i === 5) return p5
-                return null
+                return [p0, p1, p2, p3, p4, p5][i] || null
             }
 
             function switchTo(index) {

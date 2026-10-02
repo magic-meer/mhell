@@ -12,10 +12,10 @@ Item {
     property real from:    0.0
     property real to:      1.0
     property int  decimal: 2       // decimal places for display
+    property color fillColor: Settings.settingsUI.accentColor
 
     signal edited(real val)
 
-    readonly property var  cfg:      Settings.settingsUI
     readonly property real fraction: (value - from) / (to - from)
 
     implicitWidth:  180
@@ -34,7 +34,7 @@ Item {
             width:  Math.max(thumb.width / 2, parent.width * root.fraction)
             height: parent.height
             radius: parent.radius
-            color:  cfg.accentColor
+            color:  root.fillColor
         }
     }
 

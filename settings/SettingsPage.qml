@@ -28,7 +28,7 @@ Item {
             text:           root.title
             font.family:    cfg.fontFamily
             font.pixelSize: 20
-            font.weight:    Font.SemiBold
+            font.weight:    Font.DemiBold
             color:          cfg.textPrimary
         }
 
