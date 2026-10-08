@@ -143,9 +143,10 @@ FloatingWindow {
             PageBrightness { id: p4; anchors.fill: parent; visible: false }
             PageNetwork    { id: p5; anchors.fill: parent; visible: false }
             PageNotifications { id: p6; anchors.fill: parent; visible: false }
+            PageServices    { id: p7; anchors.fill: parent; visible: false }
 
             function pageAt(i) {
-                return [p0, p1, p2, p3, p4, p5, p6][i] || null
+                return [p0, p1, p2, p3, p4, p5, p6, p7][i] || null
             }
 
             function switchTo(index) {

@@ -55,6 +55,7 @@ Item {
                             case "network":     return networkComp
                             case "systemtray":  return systemTrayComp
                             case "notifications": return notificationsComp
+                            case "services":    return servicesComp
                             default:            return null
                         }
                     }
@@ -71,4 +72,5 @@ Item {
     Component { id: networkComp;    Network     {} }
     Component { id: systemTrayComp; SystemTray  {} }
     Component { id: notificationsComp; NotifIndicator {} }
+    Component { id: servicesComp;    ServiceMonitor  {} }
 }

@@ -22,6 +22,7 @@ Item {
         { icon: "󰃠", label: "Brightness"  },
         { icon: "󰤨", label: "Network"     },
         { icon: "", label: "Notifications" },
+        { icon: "󰄪", label: "Services"      },
     ]
 
     // Sidebar bg

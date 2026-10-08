@@ -128,6 +128,15 @@ Singleton {
             ]
         },
         {
+            name: "services",
+            obj:  _services,
+            keys: [
+                "icon", "fontFamily", "iconSize", "iconColor", "iconColorWarning",
+                "iconColorError", "badgeColor", "panelBg", "panelBorder",
+                "panelWidth", "pollInterval", "serviceList"
+            ]
+        },
+        {
             name: "settingsUI",
             obj:  _settingsUI,
             keys: [
@@ -267,7 +276,7 @@ Singleton {
         property var layout: QtObject {
             property var left:   ["workspaces"]
             property var center: ["clock"]
-            property var right:  ["notifications", "network", "brightness", "volume"]
+            property var right:  ["notifications", "network", "services", "brightness", "volume"]
         }
     }
     readonly property alias bar: _bar
@@ -464,6 +473,27 @@ Singleton {
     // ═════════════════════════════════════════════════════════════════════
     // SERVICE MONITOR
     // ═════════════════════════════════════════════════════════════════════
+    QtObject {
+        id: _services
+
+        property string icon: "󰄪"
+        property string fontFamily: "JetBrainsMono Nerd Font"
+        property int    iconSize:   16
+        property color iconColor:        Qt.rgba(1, 1, 1, 0.85)
+        property color iconColorWarning: Qt.rgba(1.0, 0.72, 0.2, 1.0)
+        property color iconColorError:   Qt.rgba(1.0, 0.35, 0.3, 1.0)
+        property color badgeColor:       Qt.rgba(1.0, 0.35, 0.3, 1.0)
+        property color panelBg:          Qt.rgba(0.08, 0.08, 0.11, 0.97)
+        property color panelBorder:      Qt.rgba(1, 1, 1, 0.10)
+        property int panelWidth: 340
+        property int pollInterval: 10000
+        property var serviceList: [
+            { name: "hermes-backend.service", displayName: "Hermes", icon: "󰣶" },
+            { name: "opencode-web.service", displayName: "OpenCode", icon: "󰘦" },
+            { name: "kanata-default.service", displayName: "Kanata", icon: "󰄪" },
+        ]
+    }
+    readonly property alias services: _services
 
     // ═════════════════════════════════════════════════════════════════════
     // SETTINGS WINDOW UI
