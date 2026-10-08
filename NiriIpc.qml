@@ -18,6 +18,10 @@ Singleton {
     // ── Public state ──────────────────────────────────────────────────────
     property var workspaces: []
 
+    /// Emitted when niri reports a focus change — i.e. the user clicked
+    /// somewhere else. Bar popups use it to close on click-away.
+    signal focusMoved()
+
     // ── Event-stream process ──────────────────────────────────────────────
     Process {
         id: eventStream
@@ -55,6 +59,9 @@ Singleton {
             const sorted = evt.WorkspacesChanged.workspaces.slice()
             sorted.sort(function(a, b) { return a.idx - b.idx })
             root.workspaces = sorted
+
+        } else if (evt.WindowFocusChanged) {
+            root.focusMoved()
 
         } else if (evt.WorkspaceActivated) {
             // Partial update: flip is_active/is_focused without a full reload

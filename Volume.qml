@@ -12,14 +12,18 @@ Item {
     readonly property var cfg: Settings.volume
 
     // ── Pipewire ──────────────────────────────────────────────────────────
-    readonly property var  sink:  Pipewire.defaultAudioSink
-    readonly property bool ready: sink ? sink.ready : false
-    readonly property var  audio: ready ? sink.audio : null
-    readonly property real vol:   audio ? Math.round(audio.volume * 100) : 0
-    readonly property bool muted: audio ? audio.muted : false
+    readonly property var sink: Pipewire.defaultAudioSink
+
+    // Bind the sink so its audio properties become reactive
+    PwObjectTracker {
+        objects: [ root.sink ]
+    }
+
+    readonly property real vol: sink?.audio?.volume ? Math.round(sink.audio.volume * 100) : 0
+    readonly property bool muted: sink?.audio?.muted ?? false
 
     readonly property string iconStr: {
-        if (!audio || muted || vol === 0) return cfg.iconMuted
+        if (!sink?.audio || muted || vol === 0) return cfg.iconMuted
         if (vol < 34)                     return cfg.iconLow
         if (vol < 67)                     return cfg.iconMid
         return cfg.iconHigh
@@ -75,7 +79,7 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape:  Qt.PointingHandCursor
-            onClicked: if (root.ready && root.audio) root.audio.muted = !root.audio.muted
+            onClicked: if (sink?.audio) sink.audio.muted = !sink.audio.muted
         }
     }
 
@@ -90,11 +94,11 @@ Item {
         opacity: root._exp
         visible: root._exp > 0.01
 
-        value: root.audio ? Math.max(0, Math.min(1, root.audio.volume / cfg.maxVolume)) : 0
+        value: sink?.audio ? Math.max(0, Math.min(1, sink.audio.volume / cfg.maxVolume)) : 0
         from:  0
         to:    1
 
-        onEdited: val => { if (root.ready && root.audio) root.audio.volume = val * cfg.maxVolume }
+        onEdited: val => { if (sink?.audio) sink.audio.volume = val * cfg.maxVolume }
 
         MouseArea {
             id: sliderMouse
@@ -102,9 +106,9 @@ Item {
             hoverEnabled: true
             acceptedButtons: Qt.NoButton
             onWheel: e => {
-                if (!root.ready || !root.audio) return
+                if (!sink?.audio) return
                 const d = e.angleDelta.y > 0 ? cfg.scrollStep : -cfg.scrollStep
-                root.audio.volume = Math.max(0, Math.min(cfg.maxVolume, root.audio.volume + d))
+                sink.audio.volume = Math.max(0, Math.min(cfg.maxVolume, sink.audio.volume + d))
             }
         }
     }
@@ -129,9 +133,9 @@ Item {
         hoverEnabled: true
         acceptedButtons: Qt.NoButton   // clicks handled by muteMouse/sliderMouse
         onWheel: e => {
-            if (!root.ready || !root.audio) return
+            if (!sink?.audio) return
             const d = e.angleDelta.y > 0 ? cfg.scrollStep : -cfg.scrollStep
-            root.audio.volume = Math.max(0, Math.min(cfg.maxVolume, root.audio.volume + d))
+            sink.audio.volume = Math.max(0, Math.min(cfg.maxVolume, sink.audio.volume + d))
         }
     }
 }

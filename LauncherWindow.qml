@@ -389,63 +389,44 @@ PanelWindow {
     }
 
     // ── App scanning ──────────────────────────────────────────────────────
-    property var _pendingPaths: []
-    property int _parseIdx:     0
-    property var _parsedApps:   []
+    // One process, one stdout stream: every .desktop file is concatenated
+    // with a 0x1e separator between files. Reading them with one Process
+    // per file cost ~110ms each on the GUI thread (65 files = 7s), because
+    // each spawn pays a full QProcess + event-loop round trip.
+    property var _parsedApps: []
 
-    function _scanApps() {
-        findProc.running = true
-    }
+    function _scanApps() { scanProc.running = true }
 
     Process {
-        id: findProc
+        id: scanProc
         command: ["bash", "-c",
-            "find " +
-            "/run/current-system/sw/share/applications " +
-            "/etc/profiles/per-user/meher/share/applications " +
-            "$HOME/.local/share/applications " +
-            "/home/meher/.nix-profile/share/applications " +
-            "-maxdepth 1 -name '*.desktop' 2>/dev/null | sort -u"
+            "for d in /run/current-system/sw/share/applications" +
+            " /etc/profiles/per-user/meher/share/applications" +
+            " $HOME/.local/share/applications" +
+            " /home/meher/.nix-profile/share/applications; do\n" +
+            "  for f in \"$d\"/*.desktop; do\n" +
+            "    [ -f \"$f\" ] || continue\n" +
+            "    printf '\\036'; cat -- \"$f\"\n" +
+            "  done\n" +
+            "done"
         ]
         stdout: StdioCollector {
             onStreamFinished: {
-                const paths = text.trim().split("\n").filter(p => p.length > 0)
-                win._pendingPaths = paths
-                win._parseIdx     = 0
-                win._parsedApps   = []
-                win._parseNext()
-            }
-        }
-    }
-
-    Process {
-        id: readProc
-        stdout: StdioCollector {
-            onStreamFinished: {
-                win._parseOneDesktop(text)
-                win._parseIdx++
-                win._parseNext()
+                win._parsedApps = []
+                for (const chunk of text.split("\u001e")) win._parseOneDesktop(chunk)
+                _parsedApps.sort((a, b) => a.name.localeCompare(b.name))
+                const seen = {}
+                _allApps = _parsedApps.filter(a => {
+                    if (seen[a.name]) return false
+                    seen[a.name] = true
+                    return true
+                })
+                _ready = true
             }
         }
     }
 
     Process { id: launchProc }
-
-    function _parseNext() {
-        if (_parseIdx >= _pendingPaths.length) {
-            _parsedApps.sort((a, b) => a.name.localeCompare(b.name))
-            const seen = {}
-            _allApps = _parsedApps.filter(a => {
-                if (seen[a.name]) return false
-                seen[a.name] = true
-                return true
-            })
-            _ready = true
-            return
-        }
-        readProc.command = ["cat", _pendingPaths[_parseIdx]]
-        readProc.running = true
-    }
 
     function _parseOneDesktop(content) {
         if (!content.includes("Type=Application")) return

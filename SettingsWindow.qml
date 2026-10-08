@@ -142,9 +142,10 @@ FloatingWindow {
             PageVolume     { id: p3; anchors.fill: parent; visible: false }
             PageBrightness { id: p4; anchors.fill: parent; visible: false }
             PageNetwork    { id: p5; anchors.fill: parent; visible: false }
+            PageNotifications { id: p6; anchors.fill: parent; visible: false }
 
             function pageAt(i) {
-                return [p0, p1, p2, p3, p4, p5][i] || null
+                return [p0, p1, p2, p3, p4, p5, p6][i] || null
             }
 
             function switchTo(index) {
@@ -158,10 +159,10 @@ FloatingWindow {
                 inPage.opacity = 0
                 inPage.visible = true
 
-                outAnim.direction = dir
-                outAnim.target    = outPage
-                inAnim.direction  = dir
-                inAnim.target     = inPage
+                _outAnim.direction = dir
+                _outAnim.target    = outPage
+                _inAnim.direction  = dir
+                _inAnim.target     = inPage
 
                 currentIndex        = index
                 sidebar.currentPage = index

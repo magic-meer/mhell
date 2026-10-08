@@ -119,6 +119,15 @@ Singleton {
             ]
         },
         {
+            name: "notifications",
+            obj:  _notifications,
+            keys: [
+                "iconBell", "fontFamily", "iconSize", "iconColor",
+                "iconColorActive", "badgeColor", "panelBg", "panelBorder",
+                "panelWidth", "maxItems", "rowHeight", "toastDuration"
+            ]
+        },
+        {
             name: "settingsUI",
             obj:  _settingsUI,
             keys: [
@@ -145,6 +154,10 @@ Singleton {
                     return
                 }
                 const v = src[key]
+                if (Array.isArray(v)) {
+                    out[key] = v
+                    return
+                }
                 if (!(v && typeof v === "object")) {
                     out[key] = v
                     return
@@ -163,24 +176,36 @@ Singleton {
         try { data = JSON.parse(text) } catch(e) { data = null }
 
         if (data) {
-            root._persistSchema.forEach(sec => {
-                const from = data[sec.name]
-                if (!from || typeof from !== "object") return
-                const to = sec.obj
-                sec.keys.forEach(key => {
-                    if (key === "layout") {
-                        const l = from.layout
-                        if (!l || typeof l !== "object") return
-                        if (l.left)   to.layout.left   = l.left
-                        if (l.center) to.layout.center = l.center
-                        if (l.right)  to.layout.right  = l.right
-                        return
-                    }
-                    const v = from[key]
-                    if (v === undefined || v === null || typeof v === "object") return
-                    to[key] = v
-                })
+        root._persistSchema.forEach(sec => {
+            const from = data[sec.name]
+            if (!from || typeof from !== "object") return
+            const to = sec.obj
+            sec.keys.forEach(key => {
+                if (key === "layout") {
+                    const l = from.layout
+                    if (!l || typeof l !== "object") return
+                    if (l.left)   to.layout.left   = l.left
+                    if (l.center) to.layout.center = l.center
+                    if (l.right)  to.layout.right  = l.right
+                    return
+                }
+                const v = from[key]
+                if (v === undefined || v === null) return
+                if (key === "serviceList") {
+                    // ponytail: legacy builds persisted this as a comma-joined
+                    // string; ignore anything that is not an array.
+                    if (!Array.isArray(v)) return
+                    const cleaned = v.filter(s => s && typeof s === "object" && s.name)
+                        .map(s => ({ name: String(s.name), displayName: String(s.displayName || s.name), icon: String(s.icon || "") }))
+                    if (cleaned.length > 0) to.serviceList = cleaned
+                    // ponytail: empty list is unpersistable (defaults return).
+                    // Add a "defaultList" sentinel if you ever need "none".
+                    return
+                }
+                if (typeof v === "object") return
+                to[key] = v
             })
+        })
         }
 
         root._loaded = true
@@ -242,7 +267,7 @@ Singleton {
         property var layout: QtObject {
             property var left:   ["workspaces"]
             property var center: ["clock"]
-            property var right:  ["network", "brightness", "volume"]
+            property var right:  ["notifications", "network", "brightness", "volume"]
         }
     }
     readonly property alias bar: _bar
@@ -406,6 +431,39 @@ Singleton {
         property int  hoverDuration: 120
     }
     readonly property alias network: _network
+
+    // ═════════════════════════════════════════════════════════════════════
+    // NOTIFICATIONS
+    // ═════════════════════════════════════════════════════════════════════
+    QtObject {
+        id: _notifications
+
+        // ── Icons / typography ───────────────────────────────────────────
+        property string iconBell:  ""
+        property string fontFamily: "JetBrainsMono Nerd Font"
+        property int    iconSize:   18
+
+        // ── Colors ───────────────────────────────────────────────────────
+        property color iconColor:       Qt.rgba(1, 1, 1, 0.85)
+        property color iconColorActive: Qt.rgba(0.4, 0.6, 1.0, 1.0)
+        property color badgeColor:      Qt.rgba(0.4, 0.6, 1.0, 1.0)
+        property color panelBg:         Qt.rgba(0.08, 0.08, 0.11, 0.97)
+        property color panelBorder:     Qt.rgba(1, 1, 1, 0.10)
+
+        // ── Panel geometry ───────────────────────────────────────────────
+        property int panelWidth: 380
+        property int maxItems:   10
+        property int rowHeight:  74
+
+        // ── Toast ────────────────────────────────────────────────────────
+        /// How long a toast stays on screen (milliseconds)
+        property int toastDuration: 5000
+    }
+    readonly property alias notifications: _notifications
+
+    // ═════════════════════════════════════════════════════════════════════
+    // SERVICE MONITOR
+    // ═════════════════════════════════════════════════════════════════════
 
     // ═════════════════════════════════════════════════════════════════════
     // SETTINGS WINDOW UI

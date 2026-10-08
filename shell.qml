@@ -3,6 +3,10 @@ import Quickshell
 import Quickshell.Wayland
 
 ShellRoot {
+    // Force-instantiate the Notifications singleton at startup — it owns the
+    // D-Bus name and only registers when first referenced (lazy singleton).
+    readonly property int _notificationsPin: Notifications.count
+
     // ── Bar — one per screen ──────────────────────────────────────────────
     Variants {
         model: Quickshell.screens

@@ -21,6 +21,7 @@ Item {
         { icon: "󰕾", label: "Volume"      },
         { icon: "󰃠", label: "Brightness"  },
         { icon: "󰤨", label: "Network"     },
+        { icon: "", label: "Notifications" },
     ]
 
     // Sidebar bg

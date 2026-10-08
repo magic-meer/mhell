@@ -107,6 +107,14 @@ Use `Settings.isIconPath(str)` to decide which to render.
 
 ## Rules
 
+- **Bar UI must be a reactive extension of the bar** — anchored to the module
+  that owns it, sized to its content, appearing/disappearing with that module.
+  Never a standalone window, never a fullscreen or screen-height surface, unless
+  the user explicitly asks for one. A bar module owns its own `PopupWindow`
+  (see `Clock.qml`, `NotifIndicator.qml`) and nothing else.
+- **Never create a fullscreen layer-shell surface.** `home/meher/niri/window-rules.nix`
+  applies blur to the `overlay` layer, so any fullscreen `PanelWindow`/`PopupWindow`
+  blurs (and tints) the entire monitor and swallows all input.
 - Never hardcode colors, sizes, or strings in module files — always go through `Settings.*`
 - Never edit `~/.config/niri/config.kdl` directly — it is a read-only nix store symlink
 - Don't use `spread` syntax (`...obj`) in QML JS — use `Object.assign({}, obj)` instead (QML's JS engine doesn't support object spread)

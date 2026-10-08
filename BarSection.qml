@@ -54,6 +54,7 @@ Item {
                             case "brightness":  return brightnessComp
                             case "network":     return networkComp
                             case "systemtray":  return systemTrayComp
+                            case "notifications": return notificationsComp
                             default:            return null
                         }
                     }
@@ -69,4 +70,5 @@ Item {
     Component { id: brightnessComp; Brightness  {} }
     Component { id: networkComp;    Network     {} }
     Component { id: systemTrayComp; SystemTray  {} }
+    Component { id: notificationsComp; NotifIndicator {} }
 }
