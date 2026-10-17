@@ -8,7 +8,9 @@ import QtQuick
  * modules when Settings.bar.showSeparators is true.
  *
  * Supported module names:
- *   "workspaces"  "clock"  "volume"  "brightness"  "network"
+ *   "applemenu" "workspaces" "clock" "controlcenter"
+ *   "volume" "brightness" "network" "systemtray" "notifications"
+ *   "services" "battery"
  */
 Item {
     id: root
@@ -48,15 +50,18 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     sourceComponent: {
                         switch (modelData) {
-                            case "workspaces":  return workspacesComp
-                            case "clock":       return clockComp
-                            case "volume":      return volumeComp
-                            case "brightness":  return brightnessComp
-                            case "network":     return networkComp
-                            case "systemtray":  return systemTrayComp
+                            case "applemenu":     return applemenuComp
+                            case "workspaces":    return workspacesComp
+                            case "clock":         return clockComp
+                            case "controlcenter": return controlcenterComp
+                            case "volume":        return volumeComp
+                            case "brightness":    return brightnessComp
+                            case "network":       return networkComp
+                            case "systemtray":    return systemTrayComp
                             case "notifications": return notificationsComp
-                            case "services":    return servicesComp
-                            default:            return null
+                            case "services":      return servicesComp
+                            case "battery":       return batteryComp
+                            default:              return null
                         }
                     }
                 }
@@ -65,12 +70,15 @@ Item {
     }
 
     // ── Component definitions ─────────────────────────────────────────────
-    Component { id: workspacesComp; Workspaces  {} }
-    Component { id: clockComp;      Clock       {} }
-    Component { id: volumeComp;     Volume      {} }
-    Component { id: brightnessComp; Brightness  {} }
-    Component { id: networkComp;    Network     {} }
-    Component { id: systemTrayComp; SystemTray  {} }
+    Component { id: applemenuComp;     AppMenu     {} }
+    Component { id: workspacesComp;    Workspaces  {} }
+    Component { id: clockComp;         Clock       {} }
+    Component { id: controlcenterComp; ControlCenter {} }
+    Component { id: volumeComp;        Volume      {} }
+    Component { id: brightnessComp;    Brightness  {} }
+    Component { id: networkComp;       Network     {} }
+    Component { id: systemTrayComp;    SystemTray  {} }
     Component { id: notificationsComp; NotifIndicator {} }
-    Component { id: servicesComp;    ServiceMonitor  {} }
+    Component { id: servicesComp;      ServiceMonitor  {} }
+    Component { id: batteryComp;       Battery {} }
 }

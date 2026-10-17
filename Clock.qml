@@ -17,42 +17,33 @@ Item {
         onTriggered: root.now = new Date()
     }
 
-    // ── Expand state ──────────────────────────────────────────────────────
-    property bool expanded: hoverArea.containsMouse || calPopup.anyHovered
-
-    // ── Bar display ───────────────────────────────────────────────────────
-    implicitWidth:  col.implicitWidth
+    // ── Bar display — macOS style: inline "Thu 3 Feb 14:17" ────────────────
+    implicitWidth:  row.implicitWidth
     implicitHeight: Settings.bar.height
 
-    Column {
-        id: col
+    Row {
+        id: row
         anchors.centerIn: parent
-        spacing: 1
+        spacing: 4
 
         Text {
-            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            text:           Qt.formatDate(root.now, cfg.dateFormat)
+            font.family:    cfg.fontFamily
+            font.pixelSize: cfg.dateSize
+            font.weight:    cfg.fontWeight
+            color:          cfg.dateColor
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
             text:           Qt.formatTime(root.now, cfg.timeFormat)
             font.family:    cfg.fontFamily
             font.pixelSize: cfg.timeSize
             font.weight:    cfg.fontWeight
             color:          cfg.timeColor
         }
-
-        // Date line morphs in on hover
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text:           Qt.formatDate(root.now, cfg.dateFormat)
-            font.family:    cfg.fontFamily
-            font.pixelSize: cfg.dateSize
-            color:          Qt.rgba(cfg.dateColor.r, cfg.dateColor.g, cfg.dateColor.b, root.expanded ? 1 : 0)
-            height:         root.expanded ? implicitHeight : 0
-            clip:           true
-            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-        }
     }
-
-    scale: cfg.hoverEnabled && hoverArea.containsMouse ? cfg.hoverScale : 1.0
-    Behavior on scale { NumberAnimation { duration: cfg.hoverDuration; easing.type: Easing.OutCubic } }
 
     MouseArea {
         id: hoverArea

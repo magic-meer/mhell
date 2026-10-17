@@ -11,6 +11,15 @@ SettingsPage {
         label: "Icons"
 
         SettingsRow {
+            label:       "No Device Icon"
+            description: "Shown when brightnessctl finds no backlight"
+            SIconPicker {
+                value:       Settings.brightness.iconNoDevice
+                onCommitted: val => Settings.brightness.iconNoDevice = val
+            }
+        }
+
+        SettingsRow {
             label: "Low Icon  (< 25%)"
             SIconPicker {
                 value:       Settings.brightness.iconLow
@@ -62,10 +71,19 @@ SettingsPage {
 
         SettingsRow {
             label: "Icon Color"
-            last:  true
             SColorSwatch {
                 value:          Settings.brightness.iconColor
                 onPicked: c => Settings.brightness.iconColor = c
+            }
+        }
+
+        SettingsRow {
+            label:       "No Device Color"
+            description: "Used when no backlight is detected"
+            last:        true
+            SColorSwatch {
+                value:          Settings.brightness.iconNoDeviceColor
+                onPicked: c => Settings.brightness.iconNoDeviceColor = c
             }
         }
     }

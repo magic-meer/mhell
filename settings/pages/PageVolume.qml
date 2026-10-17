@@ -11,7 +11,16 @@ SettingsPage {
         label: "Icons"
 
         SettingsRow {
-            label:       "Muted Icon"
+            label:       "No Device Icon"
+            description: "Shown when there is no audio sink at all"
+            SIconPicker {
+                value:       Settings.volume.iconNoDevice
+                onCommitted: val => Settings.volume.iconNoDevice = val
+            }
+        }
+
+        SettingsRow {
+            label:       "Muted / 0% Icon"
             description: "Glyph or path (.svg/.png/.ico)"
             SIconPicker {
                 value:       Settings.volume.iconMuted
@@ -20,7 +29,7 @@ SettingsPage {
         }
 
         SettingsRow {
-            label: "Low Icon  (< 34%)"
+            label: "Low Icon  (1–33%)"
             SIconPicker {
                 value:       Settings.volume.iconLow
                 onCommitted: val => Settings.volume.iconLow = val
@@ -28,7 +37,7 @@ SettingsPage {
         }
 
         SettingsRow {
-            label: "Mid Icon  (34–67%)"
+            label: "Mid Icon  (34–66%)"
             SIconPicker {
                 value:       Settings.volume.iconMid
                 onCommitted: val => Settings.volume.iconMid = val
@@ -36,7 +45,7 @@ SettingsPage {
         }
 
         SettingsRow {
-            label: "High Icon  (> 67%)"
+            label: "High Icon  (67–100%)"
             last:  true
             SIconPicker {
                 value:       Settings.volume.iconHigh
@@ -71,10 +80,19 @@ SettingsPage {
 
         SettingsRow {
             label: "Icon Muted Color"
-            last:  true
             SColorSwatch {
                 value:          Settings.volume.iconMutedColor
                 onPicked: c => Settings.volume.iconMutedColor = c
+            }
+        }
+
+        SettingsRow {
+            label:       "No Device Color"
+            description: "Used when no audio sink exists"
+            last:        true
+            SColorSwatch {
+                value:          Settings.volume.iconNoDeviceColor
+                onPicked: c => Settings.volume.iconNoDeviceColor = c
             }
         }
     }

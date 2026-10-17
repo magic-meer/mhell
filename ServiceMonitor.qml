@@ -15,6 +15,10 @@ Item {
     property var _statuses: ({})
     property var _scope: ({})
 
+    /// Systemd ActiveState is not just active/inactive: a unit can also be
+    /// activating, deactivating, reloading, failed, maintenance or "not-found"
+    /// (the unit does not exist). `not-found` is tracked apart from `failed`
+    /// because a typo'd unit name is a config bug, not a crash.
     readonly property int _failedCount: {
         let count = 0
         for (let i = 0; i < cfg.serviceList.length; i++) {
@@ -26,7 +30,43 @@ Item {
         return count
     }
 
-    readonly property color _iconColor: root._failedCount > 0 ? cfg.iconColorError : cfg.iconColor
+    readonly property int _missingCount: {
+        let count = 0
+        for (let i = 0; i < cfg.serviceList.length; i++) {
+            if (root._statuses[cfg.serviceList[i].name] === "not-found") count++
+        }
+        return count
+    }
+
+    readonly property color _iconColor: {
+        if (root._missingCount > 0) return cfg.iconColorWarning
+        if (root._failedCount > 0)  return cfg.iconColorError
+        return cfg.iconColor
+    }
+
+    /// Human-readable status for the list row. "not-found" is the only value
+    /// worth translating; everything else is already a systemd word.
+    function _statusLabel(name) {
+        const st = root._statuses[name]
+        if (st === undefined) return "checking..."
+        if (st === "not-found")   return "no such unit"
+        if (st === "deactivating") return "stopping"
+        if (st === "maintenance")  return "in maintenance"
+        return st
+    }
+
+    function _dotColor(name) {
+        const st = root._statuses[name]
+        if (st === undefined)          return Qt.rgba(1, 1, 1, 0.25)
+        if (st === "active")           return Qt.rgba(0.3, 0.9, 0.4, 1.0)
+        if (st === "failed")           return Qt.rgba(1.0, 0.35, 0.3, 1.0)
+        if (st === "activating" || st === "reloading" || st === "deactivating")
+                                         return Qt.rgba(1.0, 0.72, 0.2, 1.0)
+        if (st === "not-found")        return Qt.rgba(1.0, 0.72, 0.2, 1.0)
+        if (st === "maintenance")      return Qt.rgba(0.4, 0.6, 1.0, 1.0)
+        // inactive: deliberately stopped, not an error
+        return Qt.rgba(1, 1, 1, 0.25)
+    }
 
     Timer {
         id: pollTimer
@@ -141,7 +181,7 @@ Item {
         id: iconText
         anchors.centerIn: parent
         text:           cfg.icon
-        font.family:    cfg.fontFamily
+        font.family:    Settings.settingsUI.iconFont
         font.pixelSize: cfg.iconSize
         color:          root._iconColor
         scale: hit.containsMouse || root._open ? 1.18 : 1.0
@@ -244,7 +284,15 @@ Item {
                 spacing: 8
 
                 Text {
-                    text:           "Services (" + root._failedCount + "/" + cfg.serviceList.length + " down)"
+                    text: {
+                        // Surface missing units separately from failed ones —
+                        // they need different fixes.
+                        const total = cfg.serviceList.length
+                        const miss  = root._missingCount
+                        let s = "Services (" + root._failedCount + "/" + total + " down)"
+                        if (miss > 0) s += " · " + miss + " missing"
+                        return s
+                    }
                     font.family:    cfg.fontFamily
                     font.pixelSize: 13
                     font.bold:      true
@@ -306,13 +354,7 @@ Item {
                         Rectangle {
                             width: 8; height: 8; radius: 4
                             anchors.verticalCenter: parent.verticalCenter
-                            color: {
-                                const st = root._statuses[svc.name]
-                                if (st === "active") return Qt.rgba(0.3, 0.9, 0.4, 1.0)
-                                if (st === "failed") return Qt.rgba(1.0, 0.35, 0.3, 1.0)
-                                if (st === "activating" || st === "reloading") return Qt.rgba(1.0, 0.72, 0.2, 1.0)
-                                return Qt.rgba(1, 1, 1, 0.25)
-                            }
+                            color: root._dotColor(svc.name)
                         }
 
                         Column {
@@ -329,11 +371,7 @@ Item {
                                 width: parent.width
                             }
                             Text {
-                                text: {
-                                    const st = root._statuses[svc.name]
-                                    if (!st) return "checking..."
-                                    return st === "not-found" ? "no such unit" : st
-                                }
+                                text: root._statusLabel(svc.name)
                                 font.family:    cfg.fontFamily
                                 font.pixelSize: 10
                                 color:          Settings.settingsUI.textSecondary

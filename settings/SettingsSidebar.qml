@@ -15,14 +15,15 @@ Item {
     readonly property var cfg: Settings.settingsUI
 
     readonly property var pages: [
-        { icon: "󰓩", label: "Bar"         },
-        { icon: "󰀻", label: "Workspaces"  },
-        { icon: "󰥔", label: "Clock"       },
-        { icon: "󰕾", label: "Volume"      },
-        { icon: "󰃠", label: "Brightness"  },
-        { icon: "󰤨", label: "Network"     },
-        { icon: "", label: "Notifications" },
-        { icon: "󰄪", label: "Services"      },
+        { icon: "layout-panel-top", label: "Bar"           },
+        { icon: "grid-2x2",        label: "Workspaces"    },
+        { icon: "clock",           label: "Clock"         },
+        { icon: "volume-2",        label: "Volume"        },
+        { icon: "sun",             label: "Brightness"    },
+        { icon: "wifi",            label: "Network"       },
+        { icon: "bell",            label: "Notifications" },
+        { icon: "server",          label: "Services"      },
+        { icon: "battery-full",    label: "Battery"       },
     ]
 
     // Sidebar bg
@@ -126,7 +127,7 @@ Item {
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text:           navItem.modelData.icon
-                            font.family:    cfg.fontFamily
+                            font.family:    cfg.iconFont
                             font.pixelSize: 16
                             color: navItem.isActive ? cfg.accentColor : cfg.textSecondary
 

@@ -22,11 +22,32 @@ Item {
     readonly property real vol: sink?.audio?.volume ? Math.round(sink.audio.volume * 100) : 0
     readonly property bool muted: sink?.audio?.muted ?? false
 
+    /// No sink at all (no sound card, pipewire restarting, all outputs removed).
+    /// Distinct from muted, which is a user choice on a live device.
+    readonly property bool _noDevice: !sink || !sink.audio
+
+    /// Over 100% — pipewire allows it, so surface it rather than silently
+    /// clamping the label to "100%".
+    readonly property bool _boosted: !root._noDevice && !root.muted && root.vol > 100
+
     readonly property string iconStr: {
-        if (!sink?.audio || muted || vol === 0) return cfg.iconMuted
-        if (vol < 34)                     return cfg.iconLow
-        if (vol < 67)                     return cfg.iconMid
+        if (root._noDevice)                return cfg.iconNoDevice
+        if (root.muted || root.vol === 0)  return cfg.iconMuted
+        if (root.vol < 34)                 return cfg.iconLow
+        if (root.vol < 67)                 return cfg.iconMid
         return cfg.iconHigh
+    }
+
+    readonly property color iconColor: {
+        if (root._noDevice)         return cfg.iconNoDeviceColor
+        if (root.muted || root.vol === 0) return cfg.iconMutedColor
+        return cfg.iconColor
+    }
+
+    readonly property string levelText: {
+        if (root._noDevice) return "no audio"
+        if (root.muted)     return "mute"
+        return root.vol + "%"
     }
 
     // ── Expand state ──────────────────────────────────────────────────────
@@ -65,9 +86,9 @@ Item {
         id: iconText
         anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
         text:           root.iconStr
-        font.family:    cfg.fontFamily
+        font.family:    Settings.settingsUI.iconFont
         font.pixelSize: cfg.iconSize
-        color:          root.muted ? cfg.iconMutedColor : cfg.iconColor
+        color:          root.iconColor
 
         // Scale bounce on mute toggle
         scale: root._exp > 0.5 && muteMouse.pressed ? 0.85 : 1.0
@@ -117,11 +138,12 @@ Item {
     Text {
         id: levelLabel
         anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
-        text:           root.muted ? "mute" : root.vol + "%"
+        text:           root.levelText
         font.family:    cfg.fontFamily
         font.pixelSize: 11
         color:          Qt.rgba(1, 1, 1, 0.55 * root._exp)
-        width:          36
+        width:          44
+        elide:          Text.ElideRight
         horizontalAlignment: Text.AlignRight
         Behavior on color { ColorAnimation { duration: 120 } }
     }

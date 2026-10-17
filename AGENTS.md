@@ -9,8 +9,8 @@ A Quickshell + QML desktop shell for Niri on NixOS. Everything visual is driven 
 ## How to Run
 
 ```bash
-# Start (or restart after code changes)
-pkill quickshell; quickshell -c shell &
+# Restart — quickshell hot-reloads QML, so this is only for structural edits
+pkill -x quickshell      # see the supervisor warning below
 
 # Toggle settings window
 quickshell -c shell ipc call toggleSettings toggleSettings
@@ -19,7 +19,19 @@ quickshell -c shell ipc call toggleSettings toggleSettings
 quickshell -c shell ipc show
 ```
 
-`~/.config/quickshell/shell` is a symlink to `~/projects/my_quickshell`. Quickshell hot-reloads QML file changes automatically — no restart needed for most edits.
+**Do not start a second quickshell by hand.** Niri autostarts a supervisor loop:
+
+```
+bash -c 'while true; do quickshell -c shell; sleep 2; done'
+```
+
+It restarts the shell ~2s after any exit, so `pkill quickshell; quickshell -c shell &`
+leaves you with two processes and **two bars stacked on screen**. Kill and let the
+supervisor bring it back; only start one manually if the supervisor is gone.
+`pgrep -c quickshell` is unreliable here — it also matches the supervisor's `bash -c`
+command line. Count with `ps -eo cmd | grep -c '[/]quickshell -c shell'` instead.
+
+`~/.config/quickshell/shell` is a symlink to `~/projects/my_quickshell`.
 
 ## Architecture
 
@@ -81,10 +93,67 @@ All controls in `settings/controls/` must call `Settings.scheduleSave()` on user
 ## Icon Convention
 
 Icon fields in `Settings.qml` accept either:
-- A Nerd Font glyph character (rendered as `Text`)
+- A **Lucide ligature name** — plain ASCII like `"wifi"`, `"volume-2"`, `"battery-full"` (rendered as `Text`)
 - A file path ending in `.svg`, `.png`, or `.ico` (rendered as `Image`)
 
 Use `Settings.isIconPath(str)` to decide which to render.
+
+The font ships **inside this repo** at `assets/Lucide.ttf` (ISC — see
+`assets/LICENSE`, regenerate via `assets/VERSION`). Nothing is installed
+system-wide; there is no icon font in `fonts.nix`. `shell.qml` owns the
+`FontLoader` and publishes the family to `Settings.settingsUI.iconFont`,
+which is why that property is assigned imperatively rather than by a binding.
+
+Browse names at <https://lucide.dev/icons>.
+
+**Two different fonts — never mix them up:**
+
+| | property | used for |
+|---|---|---|
+| icons | `Settings.settingsUI.iconFont` | icon `Text` elements only |
+| text | `<section>.fontFamily` | labels, popups, percentages, clock, settings UI |
+
+Lucide contains **no letters or digits**. A `Text` element whose content is
+text (e.g. `"Discharging 42%"`, `"0.0 W"`, `"✕"`) must use the section's
+`fontFamily`, never `iconFont`, or it renders as tofu/fallback boxes.
+
+There is exactly one icon `Text` site per module — grep for
+`Settings.settingsUI.iconFont` to find them. When adding a module, that new site
+must use `iconFont`; everything else keeps `cfg.fontFamily`.
+
+SF Symbols (Apple) is **not** usable here — proprietary, macOS-only, not
+redistributable. Lucide is the lookalike you can legally ship.
+
+## Module States
+
+Every module must handle the full state space of its data source, not just the
+common case. A state that cannot be rendered gets its own icon + label, never a
+fallback that silently lies. Grep a module for its `state`/`status` property to
+see what it claims to support.
+
+| module | states |
+|---|---|
+| `Battery` | absent · unknown · charging · not-charging · full · discharging (0-9 critical, 10-19, 20-39, 40-59, 60-79, 80-99, 100) |
+| `Volume` | no-device · muted · 0% · 1-33 · 34-66 · 67-100 · boosted (>100%) |
+| `Brightness` | no-device (no backlight) · 0-24 · 25-49 · 50-74 · 75-99 · 100 |
+| `Network` | checking · airplane (radio off) · limited/portal · connected (wifi or wired) · disconnected · unknown |
+| `ServiceMonitor` | undefined (not polled) · active · activating · reloading · deactivating · inactive · failed · maintenance · not-found |
+
+Rules when adding a state:
+
+- New states get a new `icon*` property in `Settings.qml` **and** an entry in
+  that section's `_persistSchema` keys, **and** an `SIconPicker` row on its
+  settings page. A config value with no UI to edit it is a dead value.
+- An absent device is not a zero reading. `Brightness` with no backlight must
+  show `iconNoDevice` and hide the slider, not sit at 50%.
+- Only translate a raw value when the raw word is jargon: `not-found` → "no such
+  unit" is fine, `Discharging` → "Discharging" is not needed. See
+  `ServiceMonitor._statusLabel`.
+- Validate new ligature names with the HarfBuzz check before committing —
+  a typo renders as a blank box with no error anywhere.
+
+SF Symbols (Apple) is **not** usable here — proprietary, macOS-only, not
+redistributable. Material Symbols is the Apache-2.0 lookalike.
 
 ## Nix Context
 
@@ -119,3 +188,50 @@ Use `Settings.isIconPath(str)` to decide which to render.
 - Never edit `~/.config/niri/config.kdl` directly — it is a read-only nix store symlink
 - Don't use `spread` syntax (`...obj`) in QML JS — use `Object.assign({}, obj)` instead (QML's JS engine doesn't support object spread)
 - Keep each QML file focused on one concern — no god objects
+- **Never `git checkout --` / `git restore` / `git stash` a file without running
+  `git status --short` and `git diff` on it first.** This repo routinely has
+  uncommitted work in progress (new modules mid-build). A restore silently
+  deletes it and there is no recovery — the editor snapshots that might have
+  covered it are usually from a different, older revision. If a scripted edit
+  damages a file, repair it in place or ask; do not reach for git to reset.
+- Before rewriting a file with a script, dry-run the diff and confirm the file
+  has no uncommitted changes you would clobber.
+
+## Verification
+
+No build tooling — `qmllint` and the live shell are the checks.
+
+```bash
+# parse + type check every file. qmllint is not on PATH and is not in your
+# system profile — pull it from nixpkgs (`qtdeclarative` has no top-level
+# attribute; it lives under `qt6`):
+Q=$(nix eval --impure --raw \
+    --expr '(builtins.getFlake "github:NixOS/nixpkgs/nixos-unstable").legacyPackages.x86_64-linux.qt6.qtdeclarative.outPath')/bin/qmllint
+"$Q" -I . <file.qml>; echo "exit=$?"
+
+# restart and read the log — quickshell reports QML errors here, qmllint may not.
+# `pkill -x` only, then WAIT: the niri supervisor restarts it. Starting one
+# yourself gives you two bars.
+pkill -x quickshell; sleep 4
+cat /run/user/$(id -u)/quickshell/by-id/*/log.qslog | grep -i error
+
+# screenshot the result (niri's own tool; NIRI_SOCKET must be set)
+export NIRI_SOCKET=$(ls /run/user/$(id -u)/niri.wayland-*.sock)
+niri msg action screenshot-screen      # lands in ~/Pictures/Screenshots
+
+# in-repo checks
+python3 check_icons.py                # needs fontTools
+```
+
+Note the `qtdeclarative-6.11.1` copy already in your store is **unusable** —
+its glib needs `GLIBC_2.43` and your system glibc is older. Always resolve the
+path from nixpkgs rather than `find`-ing the store.
+
+`qmllint` exiting 0 does **not** mean the file parses in the real loader —
+it tolerated a stray `}` that stopped the shell entirely. Always restart the
+shell and check the log after touching a module's structure.
+
+A typo'd ligature name renders as a blank box with no error anywhere. Assert
+icon names against the real font by shaping them with HarfBuzz before
+committing; grep the module for its `state`/`status` property when auditing
+whether every state is actually handled.

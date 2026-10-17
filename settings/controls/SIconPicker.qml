@@ -35,7 +35,7 @@ Item {
                 visible:        !root.isPath
                 anchors.centerIn: parent
                 text:           root.value
-                font.family:    cfg.fontFamily
+                font.family:    cfg.iconFont
                 font.pixelSize: 16
                 color:          cfg.textPrimary
             }

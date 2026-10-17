@@ -28,6 +28,39 @@ SettingsPage {
         }
 
         SettingsRow {
+            label:       "Limited Icon"
+            description: "Connected but no internet (captive portal)"
+            SIconPicker {
+                value:       Settings.network.iconLimited
+                onCommitted: val => Settings.network.iconLimited = val
+            }
+        }
+
+        SettingsRow {
+            label: "Wi-Fi Off Icon"
+            SIconPicker {
+                value:       Settings.network.iconAirplane
+                onCommitted: val => Settings.network.iconAirplane = val
+            }
+        }
+
+        SettingsRow {
+            label: "Wired Icon"
+            SIconPicker {
+                value:       Settings.network.iconWired
+                onCommitted: val => Settings.network.iconWired = val
+            }
+        }
+
+        SettingsRow {
+            label: "Checking Icon"
+            SIconPicker {
+                value:       Settings.network.iconChecking
+                onCommitted: val => Settings.network.iconChecking = val
+            }
+        }
+
+        SettingsRow {
             label: "Unknown Icon"
             last:  true
             SIconPicker {
@@ -66,6 +99,23 @@ SettingsPage {
             SColorSwatch {
                 value:          Settings.network.colorDisconnected
                 onPicked: c => Settings.network.colorDisconnected = c
+            }
+        }
+
+        SettingsRow {
+            label:       "Limited Color"
+            description: "No internet despite being connected"
+            SColorSwatch {
+                value:          Settings.network.colorLimited
+                onPicked: c => Settings.network.colorLimited = c
+            }
+        }
+
+        SettingsRow {
+            label: "Wi-Fi Off Color"
+            SColorSwatch {
+                value:          Settings.network.colorAirplane
+                onPicked: c => Settings.network.colorAirplane = c
             }
         }
 

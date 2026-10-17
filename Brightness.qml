@@ -11,30 +11,45 @@ Item {
     readonly property var cfg: Settings.brightness
 
     property int percent: 50
+    /// brightnessctl exits non-zero when there is no backlight (desktop, or a
+    /// machine with no DDC-capable panel). Keep the last good value but show
+    /// the unavailable icon instead of a fake reading.
+    property bool _noDevice: false
 
     readonly property string iconStr: {
-        if (percent < 25) return cfg.iconLow
-        if (percent < 50) return cfg.iconMid
-        if (percent < 75) return cfg.iconHigh
+        if (root._noDevice) return cfg.iconNoDevice
+        if (percent < 25)  return cfg.iconLow
+        if (percent < 50)  return cfg.iconMid
+        if (percent < 75)  return cfg.iconHigh
         return cfg.iconFull
     }
+
+    readonly property color iconColor: root._noDevice ? cfg.iconNoDeviceColor : cfg.iconColor
 
     // ── Poll ──────────────────────────────────────────────────────────────
     Process {
         id: getProc
-        command: ["brightnessctl", "-m"]
+        command: ["bash", "-c", "brightnessctl -m || echo __nodevice__"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
-                const parts = text.trim().split(",")
+                const raw = text.trim()
+                if (!raw || raw === "__nodevice__") { root._noDevice = true; return }
+                const parts = raw.split(",")
                 if (parts.length >= 4) {
                     const val = parseInt(parts[3].replace("%", ""))
-                    if (!isNaN(val)) root.percent = val
+                    if (!isNaN(val)) { root.percent = val; root._noDevice = false }
                 }
             }
         }
     }
-    Timer { interval: cfg.pollInterval; running: true; repeat: true; onTriggered: getProc.running = true }
+    Timer {
+        interval: cfg.pollInterval
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: getProc.running = true
+    }
     Process { id: setProc }
 
     function setBrightness(pct) {
@@ -74,9 +89,10 @@ Item {
         id: iconText
         anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
         text:           root.iconStr
-        font.family:    cfg.fontFamily
+        font.family:    Settings.settingsUI.iconFont
         font.pixelSize: cfg.iconSize
-        color:          cfg.iconColor
+        color:          root.iconColor
+        Behavior on color { ColorAnimation { duration: 150 } }
     }
 
     // ── Slider ────────────────────────────────────────────────────────────
@@ -88,7 +104,7 @@ Item {
         }
         height:  28
         opacity: root._exp
-        visible: root._exp > 0.01
+        visible: root._exp > 0.01 && !root._noDevice
 
         value: root.percent / 100
         from:  0
@@ -115,11 +131,12 @@ Item {
     Text {
         id: pctLabel
         anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
-        text:           root.percent + "%"
+        text:           root._noDevice ? "no backlight" : root.percent + "%"
         font.family:    cfg.fontFamily
         font.pixelSize: 11
         color:          Qt.rgba(1, 1, 1, 0.55 * root._exp)
-        width:          34
+        width:          44
+        elide:          Text.ElideRight
         horizontalAlignment: Text.AlignRight
         Behavior on color { ColorAnimation { duration: 120 } }
     }

@@ -9,50 +9,105 @@ Item {
 
     readonly property var cfg: Settings.network
 
-    property string state:  "unknown"
+    property string state:  "checking"
     property string ssid:   ""
+    /// "wifi" | "ethernet" | "bridge" | "lo" | ""
+    property string devType: ""
+
+    /// Full state machine. nmcli CONNECTIVITY only reports four values, but
+    /// the real world has more: radio switched off, wired with no SSID, a
+    /// captive portal (connected to the AP but no internet), and a poll that
+    /// has not run yet. Each gets its own icon instead of collapsing into
+    /// "disconnected".
+    readonly property bool _airplane:  state === "airplane"
+    readonly property bool _limited:   state === "limited"
+    readonly property bool _wired:     state === "connected" && ssid.length === 0
+    readonly property bool _connected: state === "connected" || state === "limited"
 
     readonly property string iconStr: {
         if (state === "connected")    return cfg.iconConnected
+        if (state === "limited")      return cfg.iconLimited
         if (state === "disconnected") return cfg.iconDisconnected
+        if (state === "airplane")     return cfg.iconAirplane
+        if (state === "checking")     return cfg.iconChecking
         return cfg.iconUnknown
     }
+
     readonly property color iconColor: {
         if (state === "connected")    return cfg.colorConnected
+        if (state === "limited")      return cfg.colorLimited
         if (state === "disconnected") return cfg.colorDisconnected
+        if (state === "airplane")     return cfg.colorAirplane
+        if (state === "checking")     return cfg.colorUnknown
         return cfg.colorUnknown
     }
+
     readonly property string displayText: {
-        if (state === "connected")    return ssid.length > 0 ? ssid : "Connected"
+        if (state === "connected")    return ssid.length > 0 ? ssid : (devType === "ethernet" ? "Wired" : "Connected")
+        if (state === "limited")      return ssid.length > 0 ? ssid + " (limited)" : "Limited"
         if (state === "disconnected") return "No network"
-        return "Checking…"
+        if (state === "airplane")     return "Wi-Fi off"
+        if (state === "checking")     return "Checking…"
+        return "Unknown"
     }
 
     // ── Poll ──────────────────────────────────────────────────────────────
+    // One probe emits a single delimited line: conn|radio|devtype|ssid.
+// Doing it in one shell rather than several concurrent Process objects
+// avoids a race between the connectivity read and the SSID read.
     Process {
         id: pollProc
-        command: ["bash", "-c",
-            "nmcli -t -f CONNECTIVITY g; nmcli -t -f ACTIVE,SSID,DEVICE dev wifi 2>/dev/null | grep '^yes' | head -1"
-        ]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const lines = text.trim().split("\n")
-                const conn  = (lines[0] || "").toLowerCase()
-                root.state = (conn === "full" || conn === "limited") ? "connected"
-                           : (conn === "none" || conn === "portal")  ? "disconnected"
-                           : "unknown"
-                if (lines[1]) {
-                    const p = lines[1].split(":")
-                    root.ssid  = p[1] || ""
-                } else {
-                    root.ssid = ""
-                }
-            }
-        }
+        running: false
+        stdout: StdioCollector { onStreamFinished: root._ingest(text) }
     }
-    Timer { interval: cfg.pollInterval; running: true; repeat: true; onTriggered: pollProc.running = true }
+
+    function _probe() {
+        pollProc.command = ["bash", "-c",
+            'conn=$(nmcli -t -f CONNECTIVITY g 2>/dev/null);' +
+            'radio=$(nmcli -t -f WIFI radio 2>/dev/null);' +
+            'dev=$(nmcli -t -f DEVICE,TYPE,STATE dev 2>/dev/null | grep -vE "^(lo|br-|docker|veth|tun)" | head -1);' +
+            'type=$(echo "$dev" | cut -d: -f2);' +
+            'state=$(echo "$dev" | cut -d: -f3 | cut -d" " -f1);' +
+            'ssid="";' +
+            'if [ "$type" = "wifi" ] && [ "$state" = "connected" ]; then' +
+            '  ssid=$(nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep "^yes" | head -1 | cut -d: -f2);' +
+            'fi;' +
+            'echo "$conn|$radio|$type|$ssid"'
+        ]
+        pollProc.running = true
+    }
+
+    function _ingest(out) {
+        const p = String(out || "").trim().split("|").map(s => s.trim())
+        const conn  = (p[0] || "").toLowerCase()
+        const radio = (p[1] || "").toLowerCase()
+        const devTyp = p[2] || ""
+        const devSsid = p[3] || ""
+
+        root.devType = devTyp
+        root.ssid    = devSsid
+
+        if (radio.startsWith("disabled") || radio === "missing") root.state = "airplane"
+        else if (conn === "full")                            root.state = "connected"
+        else if (conn === "limited" || conn === "portal")     root.state = "limited"
+        else if (conn === "none")                             root.state = "disconnected"
+        else                                                  root.state = "unknown"
+    }
+
+    Timer {
+        interval: cfg.pollInterval
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: root._probe()
+    }
+    // Only launch the GUI for states where there is something to configure;
+    // a disconnected or radio-off link has no UI worth showing.
     Process { id: iwgtkProc; command: ["iwgtk"] }
+
+    function _canOpenGui() {
+        return root._connected || root.state === "unknown"
+    }
 
     // ── Expand state ──────────────────────────────────────────────────────
     property bool expanded: mouse.containsMouse
@@ -87,7 +142,7 @@ Item {
         id: netIcon
         anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
         text:           root.iconStr
-        font.family:    cfg.fontFamily
+        font.family:    Settings.settingsUI.iconFont
         font.pixelSize: cfg.iconSize
         color:          root.iconColor
         Behavior on color { ColorAnimation { duration: 200 } }
@@ -113,11 +168,12 @@ Item {
     scale: cfg.hoverEnabled && mouse.containsMouse ? cfg.hoverScale : 1.0
     Behavior on scale { NumberAnimation { duration: cfg.hoverDuration; easing.type: Easing.OutCubic } }
 
-    MouseArea {
+MouseArea {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
-        cursorShape:  Qt.PointingHandCursor
-        onClicked:    iwgtkProc.running = true
+        enabled:      root._canOpenGui()
+        cursorShape:  root._canOpenGui() ? Qt.PointingHandCursor : Qt.ArrowCursor
+        onClicked:    if (root._canOpenGui()) iwgtkProc.running = true
     }
 }

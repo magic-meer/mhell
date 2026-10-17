@@ -31,7 +31,7 @@ Item {
         id: bell
         anchors.centerIn: parent
         text:           cfg.iconBell
-        font.family:    cfg.fontFamily
+        font.family:    Settings.settingsUI.iconFont
         font.pixelSize: cfg.iconSize
         color:          Notifications.count > 0 ? cfg.iconColorActive : cfg.iconColor
         scale: hit.containsMouse || root._open ? 1.18 : 1.0
