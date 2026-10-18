@@ -1,0 +1,5 @@
+module Mshell
+
+singleton Theme 1.0 Theme.qml
+StyledText 1.0 StyledText.qml
+MenuItem 1.0 MenuItem.qml

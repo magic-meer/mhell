@@ -1,6 +1,7 @@
 import Quickshell
 import QtQuick
 import Quickshell.Widgets
+import "modules" as Mod
 
 PanelWindow {
     id: bar
@@ -12,26 +13,14 @@ PanelWindow {
         left: true
         right: true
     }
-    implicitHeight: 25
-    color: "#00000000"
-
-    // laoding fonts
-    FontLoader {
-        id: sfPro
-        source: Qt.resolvedUrl("./assets/fonts/SF-Pro/SF-Pro-Text-Regular.otf")
-        onStatusChanged: {
-            if ( status === FontLoader.Ready )
-                console.log("Font Loaded: ", name)
-            else if ( status === FontLoader.Error )
-                console.log("Error loading font!")
-        }
-    }
+    implicitHeight: Mod.Theme.barHeight
+    color: Mod.Theme.barBackgound
 
     //left side
     Row {
         anchors {
             left: parent.left
-            leftMargin: 14
+            leftMargin: Mod.Theme.barMargin
             verticalCenter: parent.verticalCenter
         }
         // spacing: 100 seems like this does not work at all
@@ -58,50 +47,56 @@ PanelWindow {
         anchor.rect.x: 10
         anchor.rect.y: 25
         visible: menuOpen
-        height: 140
-        width: 200
+        height: 160
+        width: Mod.Theme.menuWidht
         color: "transparent"
 
         Rectangle {
             anchors.fill: parent
-            radius: 4
-            color: "#C02a2a2a"
-            border.color: "#545454"
+            radius: Mod.Theme.radius
+            color: Mod.Theme.menuBackgound
+            border.color: Mod.Theme.menuBorder
 
             Column {
                 anchors.fill: parent
-                anchors.margins: 8
-                spacing: 2
+                anchors.margins: Mod.Theme.menuMargin
+                spacing: Mod.Theme.menuSpacing
 
-                Text {
-                    text: "About this Larper"
-                    color: "white"
-                }
-                //a spacer is rquried
-                Text {
-                    text:"Sleep"
-                    color: "white"
-                }
-                Text {
-                    text: "Hibernate"
-                    color: "white"
-                }
-                Text {
-                    text: "Restart"
-                    color: "white"
-                }
-                Text {
-                    text: "Shutdown"
-                    color: "white"
-                }
-                //a spacer
-                Text {
-                    text: "Lock Screen"
-                    color: "white"
-                }
-                Text {
-                    text: "Log Out mehherrr..."
-                    color: "white"
+                Repeater {
+                    model: [
+                        { type: "item", text: "About this", command: ["foot fastfetch"] },
+                        { type: "separator" },
+                        { type: "item", text: "Sleep", command: ["suspend"] },
+                        { type: "item", text: "Hibernate", command: ["hibernate"] },
+                        { type: "item", text: "Restart", command: ["systemctl reboot"] },
+                        { type: "item", text: "Shutdown", command: ["shutdown now"] },
+                        { type: "separator" },
+                        { type: "item", text: "Lock Screen", command: ["pkill niri"] },
+                        { type: "item", text: "Log Out mehherrr...", command: ["swaylock"] }
+                    ]
+                    delegate: Item {
+                        required property var modelData
+
+                        width: parent.width
+                        height: modelData.type === "separator" ? 1 : Mod.Theme.menuItemHeight
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: parent.width
+                            height: 1
+                            color: Mod.Theme.separator
+                            visible: modelData.type === "separator"
+                        }
+
+                        Mod.MenuItem {
+                            id: menuItem
+                            width: parent.widht
+                            visible: modelData.type === "item"
+
+                            text: modelData.type === "item" ? modelData.text : ""
+                            command: modelData.type === "item" ? modelData.command : []
+                        }
+                    }
                 }
             }
         }
@@ -112,20 +107,15 @@ PanelWindow {
         spacing: 10
         anchors {
             right: parent.right
-            rightMargin: 10
+            rightMargin: Mod.Theme.barMargin
             verticalCenter: parent.verticalCenter
         }
-        Text {
+        Mod.StyledText {
             text: Qt.formatDate(clock.date, "ddd d MMM")
-            color: "white"
         }
 
-        Text {
+        Mod.StyledText {
             text: Qt.formatTime(clock.date, "hh:mm")
-            color: "white"
-
-            font.family: sfPro.name
-            font.pixelSize: 12
         }
     }
 
