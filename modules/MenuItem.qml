@@ -14,7 +14,7 @@ Rectangle {
     height: Mod.Theme.menuItemHeight
     radius: Mod.Theme.radius
 
-    color: mouse.containsMouse ? Mod.Theme.hoverBackground : "transparent"
+    color: mouse.containsMouse ? Mod.Theme.accentColor : "transparent"
 
     Mod.StyledText {
         anchors.fill: parent
@@ -31,7 +31,7 @@ Rectangle {
 
         onClicked: {
             console.log("clicked!!")
-            Quickshell.execDetached({command: root.command})
+            Quickshell.execDetached(root.command)
         }
     }
 }
