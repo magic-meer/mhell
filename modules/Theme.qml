@@ -22,17 +22,21 @@ Singleton {
     readonly property color barBackgound: "#00000000"
     readonly property color menuBackgound: "#C02a2a2a"
     readonly property color hoverBackground: "#444444"
+    readonly property color accentColor: "#2d66c3"
     readonly property color separator: "#55FFFFFF"
     readonly property color menuBorder: "#545454"
+    readonly property color menuActionButtonBackground: "#00000000"
 
     // dimenstions
     readonly property int barHeight: 25
     readonly property int barMargin : 15
     readonly property int barSpacing: 4
-    readonly property int menuWidht: 200
+    readonly property int menuWidht: 160
     readonly property int menuItemHeight: 15
     readonly property int menuPadding: 12
-    readonly property int menuMargin: 9
-    readonly property int menuSpacing: 4
-    readonly property int radius: 4
+    readonly property int menuMargin: 4
+    readonly property int menuSpacing: 6
+    readonly property int menuActionButtonWidth: 30
+    readonly property int radius: 12
+    readonly property int iconSize : 16
 }
