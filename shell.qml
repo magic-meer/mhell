@@ -47,8 +47,8 @@ PanelWindow {
         anchor.rect.x: 10
         anchor.rect.y: 25
         visible: menuOpen
-        height: 160
-        width: Mod.Theme.menuWidht
+        implicitHeight: 160
+        implicitWidth: Mod.Theme.menuWidht
         color: "transparent"
 
         Rectangle {
@@ -64,15 +64,15 @@ PanelWindow {
 
                 Repeater {
                     model: [
-                        { type: "item", text: "About this", command: ["foot fastfetch"] },
+                        { type: "item", text: "About this", command: ["foot", "fastfetch"] },
                         { type: "separator" },
-                        { type: "item", text: "Sleep", command: ["suspend"] },
-                        { type: "item", text: "Hibernate", command: ["hibernate"] },
-                        { type: "item", text: "Restart", command: ["systemctl reboot"] },
-                        { type: "item", text: "Shutdown", command: ["shutdown now"] },
+                        { type: "item", text: "Sleep", command: ["systemctl", "suspend"] },
+                        { type: "item", text: "Hibernate", command: ["systemctl", "hibernate"] },
+                        { type: "item", text: "Restart", command: ["systemctl", "reboot"] },
+                        { type: "item", text: "Shutdown", command: ["systemctl", "poweroff"] },
                         { type: "separator" },
-                        { type: "item", text: "Lock Screen", command: ["pkill niri"] },
-                        { type: "item", text: "Log Out mehherrr...", command: ["swaylock"] }
+                        { type: "item", text: "Lock Screen", command: ["swaylock"] },
+                        { type: "item", text: "Log Out mehherrr...", command: ["pkill", "niri"] }
                     ]
                     delegate: Item {
                         required property var modelData
@@ -90,7 +90,7 @@ PanelWindow {
 
                         Mod.MenuItem {
                             id: menuItem
-                            width: parent.widht
+                            width: parent.width
                             visible: modelData.type === "item"
 
                             text: modelData.type === "item" ? modelData.text : ""
@@ -110,6 +110,10 @@ PanelWindow {
             rightMargin: Mod.Theme.barMargin
             verticalCenter: parent.verticalCenter
         }
+        //volume thing
+        Mod.Volume {}
+        Mod.Battery {}
+
         Mod.StyledText {
             text: Qt.formatDate(clock.date, "ddd d MMM")
         }
